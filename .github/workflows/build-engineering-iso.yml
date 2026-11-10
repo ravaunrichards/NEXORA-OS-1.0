@@ -1,0 +1,78 @@
+name: Build NEXORA engineering ISO
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build-engineering-iso.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Ubuntu 26.04 AMD64 engineering ISO
+    runs-on: ubuntu-26.04
+    timeout-minutes: 180
+    env:
+      NEXORA_SNAPSHOT: "20261109T000000Z"
+
+    steps:
+      - name: Check out NEXORA source
+        uses: actions/checkout@v4
+
+      - name: Verify host and install ISO build dependencies
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          source /etc/os-release
+          [[ "${ID:-}" == ubuntu && "${VERSION_ID:-}" == 26.04 && "${VERSION_CODENAME:-}" == resolute ]] || {
+            echo "::error::Builder requires Ubuntu 26.04 resolute."
+            exit 1
+          }
+          [[ "$(dpkg --print-architecture)" == amd64 ]] || {
+            echo "::error::Builder requires AMD64."
+            exit 1
+          }
+          mem_kb="$(awk '/MemTotal:/ {print $2}' /proc/meminfo)"
+          (( mem_kb >= 8 * 1024 * 1024 )) || {
+            echo "::error::At least 8 GiB RAM is required."
+            exit 1
+          }
+          for path in "$GITHUB_WORKSPACE" "${RUNNER_TEMP:-/tmp}" /var/tmp; do
+            free_kb="$(df -Pk "$path" | awk 'END {print $4}')"
+            [[ "$free_kb" =~ ^[0-9]+$ ]] && (( free_kb >= 25 * 1024 * 1024 )) || {
+              echo "::error::At least 25 GiB free is required on $path."
+              exit 1
+            }
+          done
+
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin
+
+          for command_name in lb debootstrap mksquashfs xorriso grub-mkrescue sha256sum df awk find; do
+            command -v "$command_name" >/dev/null 2>&1 || {
+              echo "::error::Required build command missing after package installation: $command_name"
+              exit 1
+            }
+          done
+          bash build/validate-config.sh
+          df -hT "$GITHUB_WORKSPACE" "${RUNNER_TEMP:-/tmp}" /var/tmp
+
+      - name: Build NEXORA engineering ISO
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo env NEXORA_SNAPSHOT="$NEXORA_SNAPSHOT" bash build/build-iso.sh 2>&1 | tee "$RUNNER_TEMP/nexora-build-full.log"
+
+      - name: Upload ISO, checksum, build information and full log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-26.04-amd64-engineering-${{ github.run_number }}
+          path: |
+            dist/
+            ${{ runner.temp }}/nexora-build-full.log
+          if-no-files-found: warn
+          retention-days: 30
