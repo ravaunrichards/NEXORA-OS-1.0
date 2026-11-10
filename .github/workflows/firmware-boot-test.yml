@@ -34,7 +34,7 @@ jobs:
     timeout-minutes: 90
     env:
       ARTIFACT_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.artifact_run_id }}
-      ARTIFACT_NAME: ${{ inputs.artifact_name }}
+      ARTIFACT_NAME: ${{ github.event_name == 'workflow_run' && format('NEXORA-26.04-amd64-engineering-{0}', github.event.workflow_run.run_number) || inputs.artifact_name }}
     steps:
       - name: Check out NEXORA verification scripts
         uses: actions/checkout@v4
