@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a reproducible NEXORA OS project defect.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include passwords, private keys, recovery keys, personal data, or other secrets. Report security vulnerabilities privately using SECURITY.md."
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A short, specific description of the problem.
+      placeholder: The ISO build stops during...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Repository or CI
+        - Ubuntu base build
+        - BIOS or UEFI boot
+        - Live desktop
+        - Installer
+        - NEXORA Classic
+        - NEXORA Flow
+        - System service
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Host OS, hardware or VM, architecture, NEXORA commit, workflow run ID, and Ubuntu snapshot if relevant.
+      placeholder: Ubuntu 26.04 AMD64; commit SHA; workflow run...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Provide numbered, minimal reproduction steps.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Relevant logs or evidence
+      description: Remove secrets and personal information before sharing. Link large logs or artifacts rather than pasting unrelated output.
+    validations:
+      required: false
