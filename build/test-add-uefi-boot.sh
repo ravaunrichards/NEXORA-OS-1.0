@@ -20,6 +20,11 @@ ISOLINUX_SOURCE="/usr/lib/ISOLINUX/isolinux.bin"
   exit 1
 }
 cp "$ISOLINUX_SOURCE" "$SOURCE_ROOT/isolinux/isolinux.bin"
+ISOHYBRID_MBR_SOURCE="/usr/lib/ISOLINUX/isohdpfx.bin"
+[[ -s "$ISOHYBRID_MBR_SOURCE" ]] || {
+  printf 'ERROR: Ubuntu isolinux package did not install %s\n' "$ISOHYBRID_MBR_SOURCE" >&2
+  exit 1
+}
 printf 'synthetic-kernel-for-structure-test\n' > "$SOURCE_ROOT/casper/vmlinuz"
 printf 'synthetic-initrd-for-structure-test\n' > "$SOURCE_ROOT/casper/initrd"
 
@@ -27,6 +32,7 @@ BASE_ISO="$TMP_ROOT/base-bios.iso"
 xorriso -as mkisofs \
   -o "$BASE_ISO" \
   -r -J -V NEXORA_TEST \
+  -isohybrid-mbr "$ISOHYBRID_MBR_SOURCE" \
   -b isolinux/isolinux.bin \
   -c isolinux/boot.cat \
   -no-emul-boot -boot-load-size 4 -boot-info-table \
