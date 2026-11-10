@@ -25,7 +25,8 @@ for file in \
   "$CONFIG_ROOT/modules/displaymanager.conf" \
   "$CONFIG_ROOT/modules/bootloader.conf" \
   "$CONFIG_ROOT/modules/fstab.conf" \
-  "$CONFIG_ROOT/modules/welcome.conf"; do
+  "$CONFIG_ROOT/modules/welcome.conf" \
+  "$CONFIG_ROOT/modules/shellprocess-cleanup-installer.conf"; do
   [[ -s "$file" ]] || fail "Required installer file missing or empty: $file"
 done
 
@@ -35,9 +36,17 @@ grep -Eq '^disable-cancel-during-exec:[[:space:]]*true$' "$SETTINGS" || fail "Ca
 grep -Eq '^initialPartitioningChoice:[[:space:]]*none$' "$PARTITION" || fail "Partitioning must require an explicit user choice."
 grep -Eq '^enableLuksAutomatedPartitioning:[[:space:]]*false$' "$PARTITION" || fail "Unqualified encrypted install must stay disabled."
 grep -Eq '^[[:space:]]*-[[:space:]]*calamares$' "$PACKAGES" || fail "Installed target must remove the live-only installer."
-grep -Eq '^Exec=pkexec calamares$' "$DESKTOP" || fail "Installer launcher must request the privileged Calamares process."
+grep -Eq '^Exec=pkexec calamares
+for module in welcome locale keyboard partition users summary mount unpackfs machineid fstab localecfg displaymanager networkcfg hwclock initramfscfg initramfs grubcfg bootloader packages shellprocess umount finished; do
+  grep -Eq "^[[:space:]]*-[[:space:]]*$module$" "$SETTINGS" || fail "Installer sequence is missing module: $module"
+done
 
-for module in welcome locale keyboard partition users summary mount unpackfs machineid fstab localecfg displaymanager networkcfg hwclock initramfscfg initramfs grubcfg bootloader packages umount finished; do
+printf 'NEXORA installer configuration safeguards passed.\n'
+ "$DESKTOP" || fail "Installer launcher must request the privileged Calamares process."
+grep -Fq "shellprocess@cleanup-live-installer" "$SETTINGS" || fail "Installer target cleanup step is missing."
+grep -Fq "/usr/share/applications/nexora-installer.desktop" "$CONFIG_ROOT/modules/shellprocess-cleanup-installer.conf" || fail "Target cleanup must remove the live-only installer launcher."
+
+for module in welcome locale keyboard partition users summary mount unpackfs machineid fstab localecfg displaymanager networkcfg hwclock initramfscfg initramfs grubcfg bootloader packages shellprocess umount finished; do
   grep -Eq "^[[:space:]]*-[[:space:]]*$module$" "$SETTINGS" || fail "Installer sequence is missing module: $module"
 done
 
