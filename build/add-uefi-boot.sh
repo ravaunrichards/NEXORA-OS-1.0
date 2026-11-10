@@ -109,7 +109,7 @@ xorriso \
   -outdev "$OUTPUT_ISO" \
   -mkdir /boot \
   -map "$ESP_IMAGE" /boot/nexora-efi.img \
-  -boot_image any keep \
+  -boot_image any replay \
   -boot_image any next \
   -boot_image any efi_path=/boot/nexora-efi.img \
   -commit -end > "$WORK_DIR/xorriso-remaster.log" 2>&1 || \
@@ -119,9 +119,24 @@ xorriso \
 FINAL_REPORT="$WORK_DIR/final-eltorito.txt"
 xorriso -indev "$OUTPUT_ISO" -report_el_torito plain > "$FINAL_REPORT" 2>&1 || \
   fail "Could not inspect the remastered ISO boot catalog."
-grep -qi "BIOS" "$FINAL_REPORT" || { cat "$FINAL_REPORT" >&2; fail "Remastered ISO lost its BIOS boot entry."; }
-grep -qi "UEFI" "$FINAL_REPORT" || grep -Eqi '0x0*ef|platform.*ef' "$FINAL_REPORT" || \
+grep -qi "BIOS" "$FINAL_REPORT" || {
+  printf 'Input boot report:\n' >&2
+  cat "$BIOS_REPORT" >&2
+  printf 'Remaster log:\n' >&2
+  cat "$WORK_DIR/xorriso-remaster.log" >&2
+  printf 'Final boot report:\n' >&2
+  cat "$FINAL_REPORT" >&2
+  fail "Remastered ISO lost its BIOS boot entry."
+}
+grep -qi "UEFI" "$FINAL_REPORT" || grep -Eqi '0x0*ef|platform.*ef' "$FINAL_REPORT" || {
+  printf 'Input boot report:\n' >&2
+  cat "$BIOS_REPORT" >&2
+  printf 'Remaster log:\n' >&2
+  cat "$WORK_DIR/xorriso-remaster.log" >&2
+  printf 'Final boot report:\n' >&2
+  cat "$FINAL_REPORT" >&2
   fail "Remastered ISO has no detected UEFI El Torito entry."
+}
 
 printf 'NEXORA UEFI boot image added successfully.\n'
 printf 'Kernel: %s\n' "$KERNEL_PATH"
