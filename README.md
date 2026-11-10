@@ -38,6 +38,14 @@ The timestamp is an example archive snapshot, not proof that an image has been b
 - Keep build inputs, package lists, and release artifacts traceable to commits.
 - Do not publish a release until installation, boot, security, recovery, and hardware acceptance tests pass.
 
+## Repository workflow
+
+- Read [contribution instructions](CONTRIBUTING.md) before submitting changes.
+- Report defects using the issue templates; disclose security vulnerabilities privately using [SECURITY.md](SECURITY.md).
+- Use focused branches and pull requests; do not force-push or rewrite shared history.
+- The `main` branch is currently unprotected. The repository owner must enable the settings documented in [repository governance](docs/REPOSITORY-GOVERNANCE.md).
+- No software license has been selected yet. Until one is added, do not assume that public visibility grants permission to reuse or redistribute project contents.
+
 ## Project documentation
 
 - [Current milestone status](docs/PROJECT-STATUS.md)
