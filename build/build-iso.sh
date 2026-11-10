@@ -109,6 +109,7 @@ lb config \
   --architectures amd64 \
   --binary-images iso-hybrid \
   --bootloader syslinux \
+  --memtest none \
   --bootappend-live "console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console" \
   --system live \
   --archive-areas "main restricted universe multiverse" \
