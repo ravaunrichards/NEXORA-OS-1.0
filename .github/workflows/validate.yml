@@ -21,3 +21,5 @@ jobs:
           bash -n build/validate-config.sh
           bash -n build/build-iso.sh
           bash -n build/verify-iso.sh
+          bash -n build/patch-debootstrap-download-retries.sh
+          bash -n build/test-download-retry-wrapper.sh
