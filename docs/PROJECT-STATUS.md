@@ -11,7 +11,7 @@ Status terms:
 
 | Milestone | Status | Evidence / remaining work |
 |---|---|---|
-| Repository and project foundation | Partial | Initial documentation and build scripts exist. Branch protection and maintainer workflow remain. |
+| Repository and project foundation | Partial | Added contributor/security policies, CODEOWNERS, PR and issue templates, governance runbook, and CI checks for all shell scripts and GitHub YAML. Main branch protection remains disabled and must be enabled by a repository administrator; no license has been selected. |
 | Reproducible Ubuntu base build | Partial | Build configuration pins Ubuntu 26.04, AMD64, and an explicit archive snapshot. A successful clean build and repeat-build comparison are still required. |
 | NEXORA Classic desktop | Planned | No Classic shell, layouts, settings, or interaction tests. |
 | NEXORA Flow desktop | Planned | No Flow shell, workspace, widgets, or interaction tests. |
@@ -26,13 +26,15 @@ Status terms:
 
 ## Latest automated evidence
 
-- Latest completed repository validation: [run #60](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42819226745), PASS.
-- Latest synthetic BIOS/UEFI/hybrid construction test: [run #13](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818732011), PASS.
-- The synthetic test confirms BIOS and UEFI El Torito entries, the `EFI/BOOT/BOOTX64.EFI` fallback loader, and an MBR EFI partition entry of type `0xEF`.
-- The production ISO builder and standalone verifier now reject images missing that MBR EFI marker, in addition to the BIOS and UEFI boot entries.
-- A manual QEMU/OVMF firmware smoke-test workflow is implemented at `.github/workflows/firmware-boot-test.yml`. It downloads a selected build artifact, verifies its checksum and boot structure, then checks that BIOS and UEFI boots reach a live userspace target. It has not been run because no completed NEXORA ISO artifact is available yet.
-- Full ISO build [run #25](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42817673502) is still active on commit `c0557133f0da16203e0df7dfa4a3537cc167ba1e). Latest full build [run #27](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818732087), including serial-console diagnostics and the production EFI MBR gate, is queued.
-- No completed NEXORA ISO artifact, real firmware boot, or installation test has been verified yet.
+- Latest completed repository validation before the governance-pack changes: [run #73](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42822817428), PASS.
+- The governance-pack changes add contributor/security policies, CODEOWNERS, structured issue forms, PR checklist, and main-branch protection instructions.
+- The validation workflow now checks all shell scripts under `build/` and parses every GitHub workflow and issue-form YAML file. A fresh run for the latest documentation updates is expected from the path-scoped workflow.
+- Latest synthetic BIOS/UEFI/hybrid construction test: [run #13](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818732011), PASS. It confirms BIOS and UEFI El Torito entries, `EFI/BOOT/BOOTX64.EFI`, and MBR EFI partition type `0xEF`.
+- The production ISO builder and standalone verifier reject images missing the BIOS/UEFI entries or the hybrid EFI MBR marker.
+- The manual QEMU/OVMF firmware smoke-test workflow covers optical and USB paths under BIOS and UEFI. It has not been run because no completed NEXORA ISO artifact is available.
+- Full ISO build [run #27](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818732087) is still active inside the live-build stage. No completed ISO artifact is confirmed.
+- [Run #25](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42817673502) failed; its result is not being counted as a successful image build.
+- No completed NEXORA ISO, real firmware boot, or installation test has been verified yet.
 
 Repository currently has one main branch, no pull requests, no issues, and no releases. The main branch is not protected.
 
