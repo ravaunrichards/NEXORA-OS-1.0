@@ -29,10 +29,13 @@ for required in casper linux-generic plasma-desktop sddm network-manager pipewir
   [[ -n "${seen[$required]+present}" ]] || fail "Required base package missing: $required"
 done
 
-for required_file in   "$ROOT_DIR/README.md"   "$ROOT_DIR/docs/BUILD-ARCHITECTURE.md"   "$ROOT_DIR/docs/PROJECT-STATUS.md"   "$ROOT_DIR/build/build-iso.sh"   "$ROOT_DIR/build/verify-iso.sh"   "$ROOT_DIR/build/patch-debootstrap-download-retries.sh"   "$ROOT_DIR/build/test-download-retry-wrapper.sh"; do
+for required_file in   "$ROOT_DIR/README.md"   "$ROOT_DIR/docs/BUILD-ARCHITECTURE.md"   "$ROOT_DIR/docs/PROJECT-STATUS.md"   "$ROOT_DIR/build/build-iso.sh"   "$ROOT_DIR/build/verify-iso.sh"   "$ROOT_DIR/build/patch-debootstrap-download-retries.sh"   "$ROOT_DIR/build/test-download-retry-wrapper.sh"   "$ROOT_DIR/build/add-uefi-boot.sh"   "$ROOT_DIR/build/test-add-uefi-boot.sh"; do
   [[ -s "$required_file" ]] || fail "Required project file missing or empty: $required_file"
 done
 
 bash "$ROOT_DIR/build/test-download-retry-wrapper.sh"
+
+bash -n "$ROOT_DIR/build/add-uefi-boot.sh"
+bash -n "$ROOT_DIR/build/test-add-uefi-boot.sh"
 
 printf 'NEXORA configuration validation passed. Packages checked: %s\n' "$package_count"
