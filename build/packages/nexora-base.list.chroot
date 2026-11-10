@@ -1,0 +1,27 @@
+# NEXORA OS initial live-image package manifest
+# Engineering foundation only. Classic and Flow layers are not implemented yet.
+
+casper
+linux-generic
+linux-firmware
+plasma-desktop
+sddm
+network-manager
+plasma-nm
+dolphin
+konsole
+kate
+ark
+spectacle
+discover
+pipewire
+wireplumber
+xdg-desktop-portal
+xdg-desktop-portal-kde
+mesa-vulkan-drivers
+fonts-noto-core
+fonts-noto-color-emoji
+apparmor
+ufw
+btrfs-progs
+cryptsetup
