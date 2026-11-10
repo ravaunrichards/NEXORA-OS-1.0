@@ -43,6 +43,7 @@ required_files=(
   "$ROOT_DIR/docs/REPOSITORY-GOVERNANCE.md"
   "$ROOT_DIR/docs/RELEASE-ACCEPTANCE.md"
   "$ROOT_DIR/docs/INSTALLER-ARCHITECTURE.md"
+  "$ROOT_DIR/.github/workflows/installer-package-probe.yml"
   "$ROOT_DIR/installer/README.md"
   "$ROOT_DIR/installer/test-config.sh"
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/settings.conf"
