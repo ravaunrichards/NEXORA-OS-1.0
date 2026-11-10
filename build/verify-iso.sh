@@ -21,7 +21,12 @@ xorriso -indev "$ISO_PATH" -report_el_torito plain >> "$REPORT" 2>&1 || fail "Co
 grep -qi "BIOS" "$REPORT" || fail "No BIOS El Torito entry detected."
 grep -qi "UEFI" "$REPORT" || grep -Eqi '0x0*ef|platform.*ef' "$REPORT" || fail "No UEFI El Torito entry detected."
 
-printf 'ISO filesystem and El Torito catalog inspection passed.\n'
+SYSTEM_AREA_REPORT="$(mktemp "${TMPDIR:-/tmp}/nexora-system-area-report.XXXXXX")"
+trap 'rm -f -- "$REPORT" "$SYSTEM_AREA_REPORT"' EXIT
+xorriso -indev "$ISO_PATH" -report_system_area plain > "$SYSTEM_AREA_REPORT" 2>&1 || fail "Could not inspect hybrid system area."
+grep -Eqi 'MBR partition[[:space:]]*:[[:space:]]*[0-9]+[[:space:]]+0x[0-9a-f]+[[:space:]]+0xef' "$SYSTEM_AREA_REPORT" || fail "No EFI-marked MBR partition (type 0xEF) detected."
+
+printf 'ISO filesystem, BIOS/UEFI El Torito, and hybrid EFI MBR checks passed.\n'
 if [[ -f "$ISO_PATH.sha256" ]]; then
   (
     cd "$(dirname -- "$ISO_PATH")"
