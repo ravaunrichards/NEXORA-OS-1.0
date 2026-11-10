@@ -25,7 +25,7 @@ done < "$MANIFEST"
 
 (( package_count > 0 )) || fail "Package manifest is empty"
 
-for required in casper linux-generic plasma-desktop sddm network-manager pipewire wireplumber apparmor btrfs-progs cryptsetup; do
+for required in casper calamares linux-generic plasma-desktop sddm network-manager pipewire wireplumber apparmor btrfs-progs cryptsetup squashfs-tools initramfs-tools grub2-common grub-pc-bin grub-efi-amd64-bin efibootmgr os-prober; do
   [[ -n "${seen[$required]+present}" ]] || fail "Required base package missing: $required"
 done
 
@@ -43,6 +43,19 @@ required_files=(
   "$ROOT_DIR/docs/REPOSITORY-GOVERNANCE.md"
   "$ROOT_DIR/docs/RELEASE-ACCEPTANCE.md"
   "$ROOT_DIR/docs/INSTALLER-ARCHITECTURE.md"
+  "$ROOT_DIR/installer/README.md"
+  "$ROOT_DIR/installer/test-config.sh"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/settings.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/partition.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/unpackfs.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/users.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/displaymanager.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/bootloader.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/fstab.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/welcome.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/packages.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/branding/nexora/branding.desc"
+  "$ROOT_DIR/installer/includes.chroot/usr/share/applications/nexora-installer.desktop"
   "$ROOT_DIR/build/README.md"
   "$ROOT_DIR/build/build-iso.sh"
   "$ROOT_DIR/build/verify-iso.sh"
@@ -61,7 +74,7 @@ done
 # Every project shell script must at least parse successfully.
 while IFS= read -r -d '' script; do
   bash -n "$script" || fail "Shell syntax validation failed: $script"
-done < <(find "$ROOT_DIR/build" -maxdepth 1 -type f -name '*.sh' -print0)
+done < <(find "$ROOT_DIR/build" "$ROOT_DIR/installer" -maxdepth 2 -type f -name '*.sh' -print0)
 
 # Validate all workflow and issue-form YAML documents with Ruby's standard YAML parser.
 command -v ruby >/dev/null 2>&1 || fail "Ruby is required for repository YAML syntax validation."
@@ -69,7 +82,9 @@ ruby - "$ROOT_DIR" <<'RUBY'
 require "yaml"
 root = ARGV.fetch(0)
 paths = Dir.glob(File.join(root, ".github", "**", "*.yml")) +
-        Dir.glob(File.join(root, ".github", "**", "*.yaml"))
+        Dir.glob(File.join(root, ".github", "**", "*.yaml")) +
+        Dir.glob(File.join(root, "installer", "includes.chroot", "**", "*.conf")) +
+        Dir.glob(File.join(root, "installer", "includes.chroot", "**", "*.desc"))
 abort "ERROR: No GitHub YAML files found." if paths.empty?
 paths.sort.each do |path|
   YAML.parse_file(path)
@@ -80,6 +95,7 @@ RUBY
 bash "$ROOT_DIR/build/test-download-retry-wrapper.sh"
 bash "$ROOT_DIR/build/test-firmware-selection.sh"
 bash "$ROOT_DIR/build/test-qemu-live-boot.sh"
+bash "$ROOT_DIR/installer/test-config.sh"
 
 printf 'NEXORA repository validation passed. Packages checked: %s; YAML files checked: %s.\n' \
   "$package_count" "$(find "$ROOT_DIR/.github" -type f \( -name '*.yml' -o -name '*.yaml' \) | wc -l | xargs)"
