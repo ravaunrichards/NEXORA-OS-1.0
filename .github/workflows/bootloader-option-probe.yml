@@ -28,13 +28,22 @@ jobs:
           mkdir -p "$RUNNER_TEMP/nexora-lb-probe/singular" "$RUNNER_TEMP/nexora-lb-probe/plural"
 
           cd "$RUNNER_TEMP/nexora-lb-probe/singular"
+          live_args="console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console"
           if lb config --mode ubuntu --distribution resolute --architectures amd64 \
             --binary-images iso-hybrid --bootloader syslinux \
+            --bootappend-live "$live_args" \
             --archive-areas "main restricted universe multiverse"; then
             echo "SINGULAR_OPTION=accepted"
-            grep -R -nE 'BOOTLOADER|bootloader' config || true
+            grep -R -nE 'BOOTLOADER|bootloader|BOOTAPPEND_LIVE|bootappend-live' config || true
+            if grep -R -F -- "$live_args" config >/dev/null; then
+              echo "LIVE_SERIAL_BOOT_ARGS=accepted"
+            else
+              echo "::error::live-build did not persist the requested serial-console kernel arguments."
+              exit 1
+            fi
           else
-            echo "SINGULAR_OPTION=rejected"
+            echo "::error::live-build rejected the singular bootloader or live boot-append options."
+            exit 1
           fi
 
           cd "$RUNNER_TEMP/nexora-lb-probe/plural"
