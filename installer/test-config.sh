@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT_DIR="$(cd -- "$(dirname -- "\${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_ROOT="$ROOT_DIR/installer/includes.chroot/etc/calamares"
 SETTINGS="$CONFIG_ROOT/settings.conf"
 PARTITION="$CONFIG_ROOT/modules/partition.conf"
