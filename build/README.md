@@ -2,6 +2,8 @@
 
 This creates the first **development-only live ISO**. It does not install NEXORA to a disk and is not a production release.
 
+The build creates a BIOS live image with live-build, then adds a separate x86_64 GRUB EFI El Torito image. The final ISO must expose both BIOS and UEFI entries. This is standard UEFI boot support only; Secure Boot signing and validation remain separate release gates.
+
 ## Supported build host
 
 Use a native Ubuntu 26.04 LTS AMD64 machine. Cross-architecture builds are outside this stage. The build script checks the host release, architecture, available RAM, disk space, and required tools before starting.
@@ -9,7 +11,7 @@ Use a native Ubuntu 26.04 LTS AMD64 machine. Cross-architecture builds are outsi
 Install the build tools:
 
     sudo apt-get update
-    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin
+    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools
 
 ## Build
 
@@ -34,7 +36,7 @@ Build workspaces are retained for diagnosis and can be removed manually after re
     cd dist
     sha256sum -c NEXORA-26.04-amd64-20261110T000000Z.iso.sha256
 
-The ISO verification checks the ISO filesystem and El Torito boot catalog. It is not a substitute for booting the ISO in QEMU with UEFI and BIOS firmware and on physical AMD64 hardware.
+The ISO verification checks the ISO filesystem and confirms both BIOS and UEFI El Torito entries. It is not a substitute for booting the ISO in QEMU with UEFI and BIOS firmware and on physical AMD64 hardware.
 
 ## Resource requirements
 
