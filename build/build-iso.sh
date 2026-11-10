@@ -28,7 +28,7 @@ source /etc/os-release
 HOST_ARCH="$(dpkg --print-architecture)"
 [[ "$HOST_ARCH" == "amd64" ]] || fail "Build host must be amd64; detected: $HOST_ARCH."
 
-for command_name in lb debootstrap mksquashfs xorriso grub-mkrescue sha256sum df awk find wget; do
+for command_name in lb debootstrap mksquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find wget; do
   command -v "$command_name" >/dev/null 2>&1 || fail "Missing build tool: $command_name. Install the packages listed in build/README.md."
 done
 
@@ -117,10 +117,16 @@ mapfile -t ISO_CANDIDATES < <(find "$WORK_DIR" -type f -name '*.iso' -print | so
 (( ${#ISO_CANDIDATES[@]} == 1 )) || fail "Expected exactly one generated ISO; found ${#ISO_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
 CANDIDATE="${ISO_CANDIDATES[0]}"
 
+DUAL_BOOT_CANDIDATE="$WORK_DIR/$ISO_NAME.dualboot.iso"
+bash "$ROOT_DIR/build/add-uefi-boot.sh" "$CANDIDATE" "$DUAL_BOOT_CANDIDATE"
+CANDIDATE="$DUAL_BOOT_CANDIDATE"
+
 xorriso -indev "$CANDIDATE" -report_el_torito plain > "$WORK_DIR/eltorito-report.txt" 2>&1 || \
   fail "xorriso could not inspect the generated image. Workspace retained at $WORK_DIR."
-grep -qi "El Torito" "$WORK_DIR/eltorito-report.txt" || \
-  fail "Generated image has no detectable El Torito boot catalog. Workspace retained at $WORK_DIR."
+grep -qi "BIOS" "$WORK_DIR/eltorito-report.txt" || \
+  fail "Generated image has no detectable BIOS boot entry. Workspace retained at $WORK_DIR."
+grep -qi "UEFI" "$WORK_DIR/eltorito-report.txt" || grep -Eqi '0x0*ef|platform.*ef' "$WORK_DIR/eltorito-report.txt" || \
+  fail "Generated image has no detectable UEFI boot entry. Workspace retained at $WORK_DIR."
 
 install -m 0644 "$CANDIDATE" "$ISO_PATH"
 (
