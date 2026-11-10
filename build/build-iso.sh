@@ -88,8 +88,9 @@ printf 'Exact-path package object fallback: %s\n' "$NEXORA_ARCHIVE_MIRROR"
 printf 'Private downloader: %s\n' "$(command -v wget)"
 
 cd "$WORK_DIR"
-mkdir -p config/package-lists
+mkdir -p config/package-lists config/includes.chroot
 cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
+cp -a "$ROOT_DIR/installer/includes.chroot/." config/includes.chroot/
 
 {
   printf 'NEXORA OS engineering ISO build\n'
