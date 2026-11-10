@@ -19,6 +19,8 @@ Choose and record a UTC Ubuntu archive snapshot ID. Example:
 
 The builder rejects a missing or malformed snapshot ID, the wrong host release or architecture, missing dependencies, insufficient resources, and pre-existing output names. It uses a new temporary work directory and does not overwrite prior ISO files.
 
+For network resilience, the build creates a private `wget` retry wrapper inside its temporary workspace. Only the `live-build` process uses this wrapper; failed downloads are retried up to four total attempts with short increasing delays. The system `wget` executable and installed `debootstrap` files are not modified. Package checksums and signature validation remain enabled.
+
 To select another output directory:
 
     sudo env NEXORA_SNAPSHOT=20261110T000000Z NEXORA_OUTPUT_DIR=/path/to/output bash build/build-iso.sh
