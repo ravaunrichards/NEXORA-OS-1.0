@@ -26,11 +26,13 @@ Status terms:
 
 ## Latest automated evidence
 
-- Latest workflow: Validate NEXORA build foundation, run #3.
-- Result: PASS.
-- Commit: 4cae5aa3b52df00186cc9e820fccfe992d748fe9.
-- The workflow validated manifest syntax/required entries and Bash syntax for the build scripts.
+- Latest workflow: Validate NEXORA build foundation, run #5.
+- Result: PASS (job: `validate`, completed successfully).
+- Commit: `08db1ed62734a628c2bc728a53f05f5d0a38ca13`.
+- Run: [GitHub Actions run #5](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42771054481).
+- The workflow validated the package manifest/project files and Bash syntax for the build scripts.
 - It did not run live-build, resolve the full package graph, generate an ISO, or boot-test an image.
+- Earlier run #3 evidence is superseded by this latest successful run.
 
 Repository currently has one main branch, no pull requests, no issues, and no releases. The main branch is not protected.
 
