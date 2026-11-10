@@ -64,6 +64,7 @@ required_files=(
   "$ROOT_DIR/build/patch-debootstrap-download-retries.sh"
   "$ROOT_DIR/build/test-download-retry-wrapper.sh"
   "$ROOT_DIR/build/test-firmware-selection.sh"
+  "$ROOT_DIR/build/test-live-build-compatibility.sh"
   "$ROOT_DIR/build/run-qemu-live-boot.sh"
   "$ROOT_DIR/build/test-qemu-live-boot.sh"
   "$ROOT_DIR/build/add-uefi-boot.sh"
@@ -96,6 +97,7 @@ RUBY
 
 bash "$ROOT_DIR/build/test-download-retry-wrapper.sh"
 bash "$ROOT_DIR/build/test-firmware-selection.sh"
+bash "$ROOT_DIR/build/test-live-build-compatibility.sh"
 bash "$ROOT_DIR/build/test-qemu-live-boot.sh"
 bash "$ROOT_DIR/installer/test-config.sh"
 
