@@ -111,6 +111,7 @@ xorriso \
   -boot_image any replay \
   -boot_image any next \
   -boot_image any efi_path=/boot/nexora-efi.img \
+  -boot_image isolinux partition_entry=gpt_basdat \
   -commit -end > "$WORK_DIR/xorriso-remaster.log" 2>&1 || \
   fail "xorriso could not add the UEFI El Torito boot image."
 
@@ -118,6 +119,9 @@ xorriso \
 FINAL_REPORT="$WORK_DIR/final-eltorito.txt"
 xorriso -indev "$OUTPUT_ISO" -report_el_torito plain > "$FINAL_REPORT" 2>&1 || \
   fail "Could not inspect the remastered ISO boot catalog."
+SYSTEM_AREA_REPORT="$WORK_DIR/final-system-area.txt"
+xorriso -indev "$OUTPUT_ISO" -report_system_area plain > "$SYSTEM_AREA_REPORT" 2>&1 || \
+  fail "Could not inspect the remastered ISO system area."
 grep -qi "BIOS" "$FINAL_REPORT" || {
   printf 'Input boot report:\n' >&2
   cat "$BIOS_REPORT" >&2
