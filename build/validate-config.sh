@@ -42,6 +42,7 @@ required_files=(
   "$ROOT_DIR/docs/PROJECT-STATUS.md"
   "$ROOT_DIR/docs/REPOSITORY-GOVERNANCE.md"
   "$ROOT_DIR/docs/RELEASE-ACCEPTANCE.md"
+  "$ROOT_DIR/docs/INSTALLER-ARCHITECTURE.md"
   "$ROOT_DIR/build/README.md"
   "$ROOT_DIR/build/build-iso.sh"
   "$ROOT_DIR/build/verify-iso.sh"
