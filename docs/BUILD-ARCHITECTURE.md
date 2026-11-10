@@ -17,9 +17,9 @@ If the first clean build exposes unsupported Ubuntu-specific behavior, stop and 
 
 ## Archive pinning
 
-Every build requires NEXORA_SNAPSHOT in UTC YYYYMMDDTHHMMSSZ form. The builder uses the Ubuntu snapshot service for bootstrap and chroot package acquisition. The resulting live environment is configured to use the normal Ubuntu archive and security endpoints for subsequent updates.
+Every build requires NEXORA_SNAPSHOT in UTC YYYYMMDDTHHMMSSZ form. Bootstrap and chroot package indexes, signed Release metadata, and package-version selection remain pinned to the Ubuntu snapshot. For transport resilience, only a version-specific `pool/*.deb` object that cannot be fetched promptly from the snapshot may be retrieved from the identical relative path on `archive.ubuntu.com`. The Ubuntu debootstrap downloader verifies the object's size and checksum against the pinned Packages index before accepting it. The live environment is configured to use the normal Ubuntu archive and security endpoints for subsequent updates.
 
-This pins the selected Ubuntu archive state used by the initial package build. It does not by itself guarantee bit-for-bit identical ISO bytes. Toolchain versions, build environment, generated timestamps, firmware inputs, and signing steps must also be controlled before claiming full reproducibility.
+This pins the selected Ubuntu archive metadata and package identities used by the initial package build; the fallback changes only the transport host for an identical package path and is checksum-validated. It does not by itself guarantee bit-for-bit identical ISO bytes. Toolchain versions, build environment, generated timestamps, firmware inputs, and signing steps must also be controlled before claiming full reproducibility.
 
 ## Initial package layer
 
