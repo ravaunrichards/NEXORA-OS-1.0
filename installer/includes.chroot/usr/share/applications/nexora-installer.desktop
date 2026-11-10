@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Install NEXORA OS
+GenericName=Operating System Installer
+Comment=Install NEXORA OS on this computer
+Exec=pkexec calamares
+Icon=system-software-install
+Terminal=false
+Categories=System;Settings;
+StartupNotify=true
