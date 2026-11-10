@@ -26,7 +26,7 @@ Status terms:
 
 ## Latest automated evidence
 
-- Latest completed repository validation: [run #57](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818875383), PASS.
+- Latest completed repository validation: [run #59](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42819059111), PASS.
 - Latest synthetic BIOS/UEFI/hybrid construction test: [run #13](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818732011), PASS.
 - The synthetic test confirms BIOS and UEFI El Torito entries, the `EFI/BOOT/BOOTX64.EFI` fallback loader, and an MBR EFI partition entry of type `0xEF`.
 - The production ISO builder and standalone verifier now reject images missing that MBR EFI marker, in addition to the BIOS and UEFI boot entries.
