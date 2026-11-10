@@ -22,7 +22,7 @@ concurrency:
 jobs:
   build:
     # This one-time restoration commit must not enqueue a duplicate ISO build.
-    if: ${{ github.event_name != 'push' || github.event.head_commit.message != 'ci: restore non-cancelling ISO build policy' }}
+    if: "${{ github.event_name != 'push' || (github.event.head_commit.message != 'ci: restore non-cancelling ISO build policy' && github.event.head_commit.message != 'fix: quote ISO build skip condition') }}"
     name: Build Ubuntu 26.04 AMD64 engineering ISO
     runs-on: ubuntu-26.04
     timeout-minutes: 180
