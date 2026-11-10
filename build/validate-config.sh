@@ -52,6 +52,7 @@ required_files=(
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/users.conf"
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/displaymanager.conf"
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/bootloader.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/grubcfg.conf"
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/fstab.conf"
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/welcome.conf"
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/packages.conf"
