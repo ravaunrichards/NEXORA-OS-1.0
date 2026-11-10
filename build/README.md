@@ -38,6 +38,8 @@ Build workspaces are retained for diagnosis and can be removed manually after re
 
 The ISO verification checks the ISO filesystem, BIOS and UEFI El Torito entries, and the hybrid USB MBR EFI partition marker (type 0xEF). The synthetic-image test also checks that the EFI image contains `EFI/BOOT/BOOTX64.EFI`. These are structural checks, not substitutes for booting the finished NEXORA ISO in QEMU with UEFI and BIOS firmware and on physical AMD64 hardware.
 
+After a completed build artifact exists, run the **NEXORA BIOS and UEFI firmware boot smoke tests** workflow in GitHub Actions. Supply the ISO build run ID and exact artifact name. The workflow uses QEMU with legacy BIOS and OVMF UEFI firmware and retains serial logs. It is an automated VM smoke test, not a substitute for physical-device testing.
+
 ## Resource requirements
 
 Use a builder with at least 8 GiB RAM and 25 GiB free workspace storage for this initial Plasma-based image. The script refuses to start below those thresholds.
