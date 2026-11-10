@@ -47,6 +47,15 @@ jobs:
             echo "PLURAL_OPTION=rejected"
           fi
 
+          echo "### Installed live-build bootloader scripts"
+          dpkg -L live-build | grep -E 'lb_binary_(syslinux|grub)|bootloader' || true
+          echo "### EFI references in live-build templates/scripts"
+          grep -R -nEi 'efi|syslinux\\.efi|efi\\.img|efiboot' \
+            /usr/lib/live/build/lb_binary_syslinux \
+            /usr/share/live/build/bootloaders 2>/dev/null | head -160 || true
+          echo "### Relevant package candidates"
+          apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
+
           {
             echo "## NEXORA bootloader configuration probe"
             echo "Ubuntu runner: $(. /etc/os-release && printf '%s' "$PRETTY_NAME")"
