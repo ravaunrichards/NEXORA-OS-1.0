@@ -1,0 +1,76 @@
+name: NEXORA Ubuntu 26.04 build-host capacity probe
+
+on:
+  push:
+    paths:
+      - ".github/workflows/nexora-build-host-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capacity:
+    name: Measure supported builder host
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out NEXORA source
+        uses: actions/checkout@v4
+
+      - name: Measure host compatibility and available capacity
+        id: probe
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          source /etc/os-release
+          printf 'OS: %s (%s)\n' "${PRETTY_NAME:-unknown}" "${VERSION_CODENAME:-unknown}"
+          printf 'VERSION_ID: %s\n' "${VERSION_ID:-unknown}"
+          printf 'Architecture: %s\n' "$(dpkg --print-architecture)"
+          printf 'CPU count: %s\n' "$(nproc)"
+          printf 'Memory: '
+          awk '/MemTotal:/ {printf "%.2f GiB\\n", $2 / 1024 / 1024}' /proc/meminfo
+          printf '\nFilesystem capacity:\n'
+          df -hT "$GITHUB_WORKSPACE" "${RUNNER_TEMP:-/tmp}" /var/tmp
+          printf '\nFree KiB by required build path:\n'
+          for path in "$GITHUB_WORKSPACE" "${RUNNER_TEMP:-/tmp}" /var/tmp; do
+            df -Pk "$path" | awk -v p="$path" 'END {printf "%s: %s KiB free\\n", p, $4}'
+          done
+
+          printf '\nLarge preinstalled directories (inspection only; nothing is removed):\n'
+          for path in /usr/share/dotnet /usr/local/lib/android /opt/hostedtoolcache /usr/local/share/powershell /usr/share/swift /var/lib/docker /opt/az; do
+            if [[ -e "$path" ]]; then
+              sudo du -shx "$path" 2>/dev/null || true
+            fi
+          done
+
+          printf '\nUbuntu live-build package candidate:\n'
+          apt-cache policy live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin || true
+
+          os_ok=false
+          arch_ok=false
+          ram_ok=false
+          disk_ok=true
+          [[ "${ID:-}" == ubuntu && "${VERSION_ID:-}" == 26.04 && "${VERSION_CODENAME:-}" == resolute ]] && os_ok=true
+          [[ "$(dpkg --print-architecture)" == amd64 ]] && arch_ok=true
+          mem_kb="$(awk '/MemTotal:/ {print $2}' /proc/meminfo)"
+          (( mem_kb >= 8 * 1024 * 1024 )) && ram_ok=true
+          for path in "$GITHUB_WORKSPACE" "${RUNNER_TEMP:-/tmp}" /var/tmp; do
+            free_kb="$(df -Pk "$path" | awk 'END {print $4}')"
+            [[ "$free_kb" =~ ^[0-9]+$ ]] && (( free_kb >= 25 * 1024 * 1024 )) || disk_ok=false
+          done
+
+          ready=false
+          if [[ "$os_ok" == true && "$arch_ok" == true && "$ram_ok" == true && "$disk_ok" == true ]]; then
+            ready=true
+          fi
+          {
+            echo "### NEXORA build-host probe"
+            echo "- Ubuntu 26.04 / resolute: $os_ok"
+            echo "- AMD64: $arch_ok"
+            echo "- At least 8 GiB RAM: $ram_ok"
+            echo "- At least 25 GiB free on repository, temp and /var/tmp filesystems: $disk_ok"
+            echo "- **Builder preflight ready: $ready**"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "builder_ready=$ready" >> "$GITHUB_OUTPUT"
+          echo "BUILDER_READY=$ready"
