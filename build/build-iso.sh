@@ -12,7 +12,10 @@ fail() {
 SNAPSHOT="${NEXORA_SNAPSHOT:-}"
 [[ "$SNAPSHOT" =~ ^[0-9]{8}T[0-9]{6}Z$ ]] || fail "Set NEXORA_SNAPSHOT in YYYYMMDDTHHMMSSZ format."
 command -v date >/dev/null 2>&1 || fail "GNU date is required."
-SNAPSHOT_EPOCH="$(date -u -d "${SNAPSHOT:0:8} ${SNAPSHOT:9:6}" +%s 2>/dev/null)" || fail "Invalid snapshot timestamp."
+SNAPSHOT_ISO="${SNAPSHOT:0:4}-${SNAPSHOT:4:2}-${SNAPSHOT:6:2}T${SNAPSHOT:9:2}:${SNAPSHOT:11:2}:${SNAPSHOT:13:2}Z"
+SNAPSHOT_EPOCH="$(date -u -d "$SNAPSHOT_ISO" +%s 2>/dev/null)" || fail "Invalid snapshot timestamp."
+NORMALIZED_SNAPSHOT="$(date -u -d "@$SNAPSHOT_EPOCH" +%Y%m%dT%H%M%SZ)"
+[[ "$NORMALIZED_SNAPSHOT" == "$SNAPSHOT" ]] || fail "Invalid snapshot timestamp."
 NOW_EPOCH="$(date -u +%s)"
 (( SNAPSHOT_EPOCH <= NOW_EPOCH )) || fail "The selected Ubuntu snapshot timestamp is in the future."
 
