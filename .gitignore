@@ -1,0 +1,13 @@
+# Local ISO build output and temporary work
+/dist/
+/out/
+/*.iso
+/*.iso.sha256
+/live-build.log
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
