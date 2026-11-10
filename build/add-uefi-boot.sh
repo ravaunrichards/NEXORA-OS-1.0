@@ -57,10 +57,10 @@ LAYOUT="${KERNEL_PATH#/}"
 LAYOUT="${LAYOUT%%/*}"
 case "$LAYOUT" in
   casper)
-    BOOT_ARGS="boot=casper quiet splash ---"
+    BOOT_ARGS="boot=casper quiet splash console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console ---"
     ;;
   live)
-    BOOT_ARGS="boot=live components quiet splash"
+    BOOT_ARGS="boot=live components quiet splash console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console"
     ;;
   *)
     fail "Unsupported live kernel layout: $KERNEL_PATH"
