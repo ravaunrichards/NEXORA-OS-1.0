@@ -1,6 +1,6 @@
 # NEXORA engineering ISO build
 
-This creates the first **development-only live ISO**. It does not install NEXORA to a disk and is not a production release.
+This creates a **development-only live ISO** with the NEXORA Calamares installer configuration and application-menu launcher. The installer is experimental and is not approved for real-disk installation until the disposable-disk acceptance tests pass. This is not a production release.
 
 The build creates a BIOS live image with live-build, then adds a separate x86_64 GRUB EFI El Torito image. The final ISO must expose both BIOS and UEFI entries. BIOS live boot parameters direct kernel and systemd diagnostics to both the serial console and VGA so headless QEMU tests can verify that userspace was reached. The serial-argument option was confirmed against the Ubuntu Resolute live-build package. This is standard UEFI boot support only; Secure Boot signing and validation remain separate release gates.
 
