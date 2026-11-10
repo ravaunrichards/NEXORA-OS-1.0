@@ -14,9 +14,12 @@ done
 
 SOURCE_ROOT="$TMP_ROOT/source"
 mkdir -p "$SOURCE_ROOT/isolinux" "$SOURCE_ROOT/casper"
-# xorriso only needs a structurally valid BIOS El Torito image for this
-# remastering test; real BIOS execution is tested against the finished ISO.
-dd if=/dev/zero of="$SOURCE_ROOT/isolinux/isolinux.bin" bs=2048 count=4 status=none
+ISOLINUX_SOURCE="/usr/lib/ISOLINUX/isolinux.bin"
+[[ -s "$ISOLINUX_SOURCE" ]] || {
+  printf 'ERROR: Ubuntu isolinux package did not install %s\n' "$ISOLINUX_SOURCE" >&2
+  exit 1
+}
+cp "$ISOLINUX_SOURCE" "$SOURCE_ROOT/isolinux/isolinux.bin"
 printf 'synthetic-kernel-for-structure-test\n' > "$SOURCE_ROOT/casper/vmlinuz"
 printf 'synthetic-initrd-for-structure-test\n' > "$SOURCE_ROOT/casper/initrd"
 
@@ -28,6 +31,14 @@ xorriso -as mkisofs \
   -c isolinux/boot.cat \
   -no-emul-boot -boot-load-size 4 -boot-info-table \
   "$SOURCE_ROOT" > "$TMP_ROOT/mkisofs.log" 2>&1
+
+BASE_REPORT="$TMP_ROOT/base-eltorito.txt"
+xorriso -indev "$BASE_ISO" -report_el_torito plain > "$BASE_REPORT" 2>&1
+grep -Eqi 'BIOS|platform.*0x00' "$BASE_REPORT" || {
+  printf 'ERROR: Synthetic source image lacks a BIOS El Torito entry.\n' >&2
+  cat "$BASE_REPORT" >&2
+  exit 1
+}
 
 DUAL_ISO="$TMP_ROOT/nexora-dualboot-test.iso"
 bash "$ROOT_DIR/build/add-uefi-boot.sh" "$BASE_ISO" "$DUAL_ISO" > "$TMP_ROOT/add-uefi.log"
