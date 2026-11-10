@@ -2,7 +2,7 @@
 
 This creates the first **development-only live ISO**. It does not install NEXORA to a disk and is not a production release.
 
-The build creates a BIOS live image with live-build, then adds a separate x86_64 GRUB EFI El Torito image. The final ISO must expose both BIOS and UEFI entries. This is standard UEFI boot support only; Secure Boot signing and validation remain separate release gates.
+The build creates a BIOS live image with live-build, then adds a separate x86_64 GRUB EFI El Torito image. The final ISO must expose both BIOS and UEFI entries. BIOS live boot parameters direct kernel and systemd diagnostics to both the serial console and VGA so headless QEMU tests can verify that userspace was reached. The serial-argument option was confirmed against the Ubuntu Resolute live-build package. This is standard UEFI boot support only; Secure Boot signing and validation remain separate release gates.
 
 ## Supported build host
 
