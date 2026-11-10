@@ -18,7 +18,8 @@ trap 'rm -f -- "$REPORT"' EXIT
 
 xorriso -indev "$ISO_PATH" -pvd_info > "$REPORT" 2>&1 || fail "Image could not be read as an ISO filesystem."
 xorriso -indev "$ISO_PATH" -report_el_torito plain >> "$REPORT" 2>&1 || fail "Could not inspect El Torito boot catalog."
-grep -qi "El Torito" "$REPORT" || fail "No El Torito boot catalog detected."
+grep -qi "BIOS" "$REPORT" || fail "No BIOS El Torito entry detected."
+grep -qi "UEFI" "$REPORT" || grep -Eqi '0x0*ef|platform.*ef' "$REPORT" || fail "No UEFI El Torito entry detected."
 
 printf 'ISO filesystem and El Torito catalog inspection passed.\n'
 if [[ -f "$ISO_PATH.sha256" ]]; then
