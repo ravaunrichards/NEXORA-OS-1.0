@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/build-engineering-iso.yml"
       - "build/build-iso.sh"
+      - "build/add-uefi-boot.sh"
       - "build/patch-debootstrap-download-retries.sh"
       - "build/packages/**"
   workflow_dispatch:
