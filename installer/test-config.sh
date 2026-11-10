@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG_ROOT="$ROOT_DIR/installer/includes.chroot/etc/calamares"
+SETTINGS="$CONFIG_ROOT/settings.conf"
+PARTITION="$CONFIG_ROOT/modules/partition.conf"
+PACKAGES="$CONFIG_ROOT/modules/packages.conf"
+BRANDING="$CONFIG_ROOT/branding/nexora/branding.desc"
+DESKTOP="$ROOT_DIR/installer/includes.chroot/usr/share/applications/nexora-installer.desktop"
+
+fail() {
+  printf 'ERROR: %s\n' "$*" >&2
+  exit 1
+}
+
+for file in "$SETTINGS" "$PARTITION" "$PACKAGES" "$BRANDING" "$DESKTOP"; do
+  [[ -s "$file" ]] || fail "Required installer file missing or empty: $file"
+done
+
+grep -Eq '^prompt-install:[[:space:]]*true$' "$SETTINGS" || fail "Final confirmation must be enabled."
+grep -Eq '^dont-chroot:[[:space:]]*false$' "$SETTINGS" || fail "Installer must use a target chroot."
+grep -Eq '^disable-cancel-during-exec:[[:space:]]*true$' "$SETTINGS" || fail "Cancellation must be locked only during disk-write execution."
+grep -Eq '^initialPartitioningChoice:[[:space:]]*none$' "$PARTITION" || fail "Partitioning must require an explicit user choice."
+grep -Eq '^enableLuksAutomatedPartitioning:[[:space:]]*false$' "$PARTITION" || fail "Unqualified encrypted install must stay disabled."
+grep -Eq '^[[:space:]]*-[[:space:]]*calamares$' "$PACKAGES" || fail "Installed target must remove the live-only installer."
+grep -Eq '^Exec=pkexec calamares$' "$DESKTOP" || fail "Installer launcher must request the privileged Calamares process."
+
+for module in welcome locale keyboard partition users summary mount unpackfs machineid fstab localecfg displaymanager networkcfg hwclock initramfscfg initramfs grubcfg bootloader packages umount finished; do
+  grep -Eq "^[[:space:]]*-[[:space:]]*$module$" "$SETTINGS" || fail "Installer sequence is missing module: $module"
+done
+
+printf 'NEXORA installer configuration safeguards passed.\n'
