@@ -55,6 +55,7 @@ required_files=(
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/fstab.conf"
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/welcome.conf"
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/packages.conf"
+  "$ROOT_DIR/installer/includes.chroot/etc/calamares/modules/shellprocess-cleanup-installer.conf"
   "$ROOT_DIR/installer/includes.chroot/etc/calamares/branding/nexora/branding.desc"
   "$ROOT_DIR/installer/includes.chroot/usr/share/applications/nexora-installer.desktop"
   "$ROOT_DIR/build/README.md"
