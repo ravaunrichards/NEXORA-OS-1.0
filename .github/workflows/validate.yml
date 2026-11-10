@@ -1,7 +1,15 @@
-name: Validate NEXORA build foundation
+name: Validate NEXORA repository foundation
 
 on:
   push:
+    paths:
+      - ".github/**"
+      - "build/**"
+      - "docs/**"
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "SECURITY.md"
+      - ".gitignore"
   pull_request:
   workflow_dispatch:
 
@@ -10,16 +18,13 @@ permissions:
 
 jobs:
   validate:
+    name: validate
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Check out source
         uses: actions/checkout@v4
-      - name: Validate package manifest and project files
+
+      - name: Validate package manifest, repository files, all shell scripts, and GitHub YAML
+        shell: bash
         run: bash build/validate-config.sh
-      - name: Check shell syntax
-        run: |
-          bash -n build/validate-config.sh
-          bash -n build/build-iso.sh
-          bash -n build/verify-iso.sh
-          bash -n build/patch-debootstrap-download-retries.sh
-          bash -n build/test-download-retry-wrapper.sh
