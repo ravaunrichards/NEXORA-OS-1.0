@@ -18,7 +18,7 @@ Status terms:
 | System services | Planned | Network, audio, Bluetooth, power, storage, printing, and update integration must be validated. |
 | Applications | Planned | No NEXORA application suite or app-store integration. |
 | Installer | Planned | No installer, partitioning, dual-boot, or encryption setup. |
-| Bootable ISO | Planned | Build configuration exists; no ISO artifact or boot-test result is committed. |
+| Bootable ISO | Partial | Guarded Ubuntu 26.04 AMD64 live-build pipeline, snapshot pinning, isolated download retries, checksum generation, and El Torito inspection are implemented. No successful ISO artifact or UEFI/BIOS boot result is verified yet. |
 | Hardware compatibility | Unverified | No hardware test matrix or physical-device results. |
 | Security | Planned | Threat model, Secure Boot signing, AppArmor policy, firewall defaults, update trust, and security tests remain. |
 | Recovery | Planned | No recovery environment, rollback workflow, or restore tests. |
