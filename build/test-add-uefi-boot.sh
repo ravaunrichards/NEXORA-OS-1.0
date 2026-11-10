@@ -45,6 +45,14 @@ bash "$ROOT_DIR/build/add-uefi-boot.sh" "$BASE_ISO" "$DUAL_ISO" > "$TMP_ROOT/add
 
 REPORT="$TMP_ROOT/eltorito.txt"
 xorriso -indev "$DUAL_ISO" -report_el_torito plain > "$REPORT" 2>&1
+
+SYSTEM_AREA_REPORT="$TMP_ROOT/system-area.txt"
+xorriso -indev "$DUAL_ISO" -report_system_area plain > "$SYSTEM_AREA_REPORT" 2>&1
+grep -Eqi '0x0*ef|EFI System|EFI partition' "$SYSTEM_AREA_REPORT" || {
+  printf 'ERROR: Hybrid system area has no EFI partition entry.\n' >&2
+  cat "$SYSTEM_AREA_REPORT" >&2
+  exit 1
+}
 grep -qi "BIOS" "$REPORT" || {
   printf 'ERROR: Synthetic image lost its BIOS boot entry.\n' >&2
   exit 1
@@ -64,5 +72,7 @@ mcopy -i "$EXTRACTED_ESP" ::/EFI/BOOT/BOOTX64.EFI "$TMP_ROOT/BOOTX64.EFI"
   exit 1
 }
 
-printf 'NEXORA dual-boot image construction test passed (BIOS + UEFI El Torito entries).\n'
+printf 'NEXORA hybrid boot construction test passed (BIOS + UEFI El Torito and EFI partition entry).\n'
 cat "$REPORT"
+printf '\nSystem area report:\n'
+cat "$SYSTEM_AREA_REPORT"
