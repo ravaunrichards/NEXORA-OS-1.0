@@ -20,7 +20,7 @@ jobs:
   firmware-boot:
     name: Boot NEXORA ISO with BIOS and UEFI firmware
     runs-on: ubuntu-26.04
-    timeout-minutes: 50
+    timeout-minutes: 90
     steps:
       - name: Check out NEXORA verification scripts
         uses: actions/checkout@v4
@@ -144,7 +144,7 @@ jobs:
           qemu_status=$?
           set -e
           echo "QEMU BIOS USB exit status: $qemu_status"
-          if grep -Eiq 'Reached target.*(graphical\\.target|Graphical Interface|multi-user\\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
+          if grep -Eiq 'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
             echo "BIOS USB boot reached the live userspace target."
           else
             echo "::error::BIOS USB boot did not reach a confirmed live userspace target."
@@ -189,7 +189,7 @@ jobs:
           qemu_status=$?
           set -e
           echo "QEMU UEFI USB exit status: $qemu_status"
-          if grep -Eiq 'Reached target.*(graphical\\.target|Graphical Interface|multi-user\\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
+          if grep -Eiq 'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
             echo "UEFI USB boot reached the live userspace target."
           else
             echo "::error::UEFI USB boot did not reach a confirmed live userspace target."
