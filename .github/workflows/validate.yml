@@ -1,0 +1,23 @@
+name: Validate NEXORA build foundation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Validate package manifest and project files
+        run: bash build/validate-config.sh
+      - name: Check shell syntax
+        run: |
+          bash -n build/validate-config.sh
+          bash -n build/build-iso.sh
+          bash -n build/verify-iso.sh
