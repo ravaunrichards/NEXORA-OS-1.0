@@ -25,12 +25,14 @@ for file in \
   "$CONFIG_ROOT/modules/users.conf" \
   "$CONFIG_ROOT/modules/displaymanager.conf" \
   "$CONFIG_ROOT/modules/bootloader.conf" \
+  "$CONFIG_ROOT/modules/grubcfg.conf" \
   "$CONFIG_ROOT/modules/fstab.conf" \
   "$CONFIG_ROOT/modules/welcome.conf" \
   "$CLEANUP"; do
   [[ -s "$file" ]] || fail "Required installer file missing or empty: $file"
 done
 
+grep -Fq "GRUB_DISABLE_OS_PROBER: false" "$CONFIG_ROOT/modules/grubcfg.conf" || fail "Existing operating-system discovery must be enabled." 
 grep -Eq '^prompt-install:[[:space:]]*true$' "$SETTINGS" || fail "Final confirmation must be enabled."
 grep -Eq '^dont-chroot:[[:space:]]*false$' "$SETTINGS" || fail "Installer must use a target chroot."
 grep -Eq '^disable-cancel-during-exec:[[:space:]]*true$' "$SETTINGS" || fail "Cancellation must be locked only during disk-write execution."
