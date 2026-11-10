@@ -11,7 +11,7 @@ Use a native Ubuntu 26.04 LTS AMD64 machine. Cross-architecture builds are outsi
 Install the build tools:
 
     sudo apt-get update
-    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools
+    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux
 
 ## Build
 
@@ -36,7 +36,7 @@ Build workspaces are retained for diagnosis and can be removed manually after re
     cd dist
     sha256sum -c NEXORA-26.04-amd64-20261110T000000Z.iso.sha256
 
-The ISO verification checks the ISO filesystem and confirms both BIOS and UEFI El Torito entries. It is not a substitute for booting the ISO in QEMU with UEFI and BIOS firmware and on physical AMD64 hardware.
+The ISO verification checks the ISO filesystem, BIOS and UEFI El Torito entries, and the hybrid USB MBR EFI partition marker (type 0xEF). The synthetic-image test also checks that the EFI image contains `EFI/BOOT/BOOTX64.EFI`. These are structural checks, not substitutes for booting the finished NEXORA ISO in QEMU with UEFI and BIOS firmware and on physical AMD64 hardware.
 
 ## Resource requirements
 
