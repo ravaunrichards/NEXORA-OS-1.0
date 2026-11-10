@@ -110,6 +110,7 @@ xorriso \
   -mkdir /boot \
   -map "$ESP_IMAGE" /boot/nexora-efi.img \
   -boot_image any keep \
+  -boot_image any next \
   -boot_image any efi_path=/boot/nexora-efi.img \
   -commit -end > "$WORK_DIR/xorriso-remaster.log" 2>&1 || \
   fail "xorriso could not add the UEFI El Torito boot image."
