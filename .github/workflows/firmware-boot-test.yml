@@ -8,9 +8,16 @@ on:
         required: true
         type: string
       artifact_name:
-        description: Exact artifact name from the ISO build run (for example NEXORA-26.04-amd64-engineering-26)
+        description: Exact artifact name from the ISO build run (for example NEXORA-26.04-amd64-engineering-27)
         required: true
         type: string
+  workflow_run:
+    workflows:
+      - Build NEXORA engineering ISO
+    types:
+      - completed
+    branches:
+      - main
 
 permissions:
   actions: read
@@ -18,9 +25,16 @@ permissions:
 
 jobs:
   firmware-boot:
+    if: >-
+      ${{ github.event_name != 'workflow_run' ||
+          (github.event.workflow_run.conclusion == 'success' &&
+           github.event.workflow_run.head_repository.full_name == github.repository) }}
     name: Boot NEXORA ISO with BIOS and UEFI firmware
     runs-on: ubuntu-26.04
     timeout-minutes: 90
+    env:
+      ARTIFACT_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.artifact_run_id }}
+      ARTIFACT_NAME: ${{ inputs.artifact_name }}
     steps:
       - name: Check out NEXORA verification scripts
         uses: actions/checkout@v4
@@ -35,9 +49,9 @@ jobs:
       - name: Download the selected ISO build artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.artifact_name }}
+          name: ${{ env.ARTIFACT_NAME }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.artifact_run_id }}
+          run-id: ${{ env.ARTIFACT_RUN_ID }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/nexora-artifact
 
