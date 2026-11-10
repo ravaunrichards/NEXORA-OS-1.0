@@ -21,7 +21,7 @@ Choose and record a UTC Ubuntu archive snapshot ID. Example:
 
 The builder rejects a missing or malformed snapshot ID, the wrong host release or architecture, missing dependencies, insufficient resources, and pre-existing output names. It uses a new temporary work directory and does not overwrite prior ISO files.
 
-For network resilience, the build creates a private `wget` retry wrapper inside its temporary workspace. Only the `live-build` process uses this wrapper; failed downloads are retried up to four total attempts with short increasing delays. The system `wget` executable and installed `debootstrap` files are not modified. Package checksums and signature validation remain enabled.
+For network resilience, the build creates a private `wget` wrapper inside its temporary workspace. Signed Release and Packages metadata remains on the selected Ubuntu snapshot. If a version-specific `pool/*.deb` object cannot be fetched promptly from that snapshot, the wrapper retrieves the exact same package path from `archive.ubuntu.com`; it does not change package names or versions. The Ubuntu debootstrap downloader checks the downloaded package's size and checksum against the pinned Packages index before accepting it. Other download failures receive up to four attempts. The system `wget` executable and installed `debootstrap` files are not modified. The fallback decisions are recorded in `nexora-download-fallback.log` alongside the build log.
 
 To select another output directory:
 
