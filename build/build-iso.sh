@@ -11,11 +11,16 @@ fail() {
 
 SNAPSHOT="${NEXORA_SNAPSHOT:-}"
 [[ "$SNAPSHOT" =~ ^[0-9]{8}T[0-9]{6}Z$ ]] || fail "Set NEXORA_SNAPSHOT in YYYYMMDDTHHMMSSZ format."
+command -v date >/dev/null 2>&1 || fail "GNU date is required."
+SNAPSHOT_EPOCH="$(date -u -d "${SNAPSHOT:0:8} ${SNAPSHOT:9:6}" +%s 2>/dev/null)" || fail "Invalid snapshot timestamp."
+NOW_EPOCH="$(date -u +%s)"
+(( SNAPSHOT_EPOCH <= NOW_EPOCH )) || fail "The selected Ubuntu snapshot timestamp is in the future."
 
 [[ "$EUID" -eq 0 ]] || fail "Run with sudo: sudo env NEXORA_SNAPSHOT=$SNAPSHOT bash build/build-iso.sh"
 
 source /etc/os-release
-[[ "${ID:-}" == "ubuntu" && "${VERSION_ID:-}" == "26.04" && "${VERSION_CODENAME:-}" == "resolute" ]] ||   fail "Build host must be Ubuntu 26.04 LTS (resolute). Detected: ${PRETTY_NAME:-unknown}."
+[[ "${ID:-}" == "ubuntu" && "${VERSION_ID:-}" == "26.04" && "${VERSION_CODENAME:-}" == "resolute" ]] || \
+  fail "Build host must be Ubuntu 26.04 LTS (resolute). Detected: ${PRETTY_NAME:-unknown}."
 
 HOST_ARCH="$(dpkg --print-architecture)"
 [[ "$HOST_ARCH" == "amd64" ]] || fail "Build host must be amd64; detected: $HOST_ARCH."
@@ -28,12 +33,25 @@ bash "$ROOT_DIR/build/validate-config.sh"
 
 MEM_KB="$(awk '/MemTotal:/ {print $2}' /proc/meminfo)"
 (( MEM_KB >= 8 * 1024 * 1024 )) || fail "At least 8 GiB RAM is required."
-FREE_KB="$(df -Pk "$ROOT_DIR" | awk 'NR == 2 {print $4}')"
-(( FREE_KB >= 25 * 1024 * 1024 )) || fail "At least 25 GiB free disk space is required on the repository filesystem."
 
+check_free_space() {
+  local location="$1"
+  local description="$2"
+  local free_kb
+  free_kb="$(df -Pk "$location" | awk 'END {print $4}')"
+  [[ "$free_kb" =~ ^[0-9]+$ ]] || fail "Could not determine free disk space for $description ($location)."
+  (( free_kb >= 25 * 1024 * 1024 )) || fail "At least 25 GiB free space is required for $description ($location)."
+}
+
+TMP_ROOT="${TMPDIR:-/var/tmp}"
+[[ -d "$TMP_ROOT" && -w "$TMP_ROOT" ]] || fail "Temporary workspace location is not writable: $TMP_ROOT"
 OUTPUT_DIR="${NEXORA_OUTPUT_DIR:-$ROOT_DIR/dist}"
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd -- "$OUTPUT_DIR" && pwd)"
+
+check_free_space "$ROOT_DIR" "the repository filesystem"
+check_free_space "$TMP_ROOT" "the build workspace filesystem"
+check_free_space "$OUTPUT_DIR" "the ISO output filesystem"
 
 ISO_NAME="NEXORA-26.04-amd64-$SNAPSHOT.iso"
 ISO_PATH="$OUTPUT_DIR/$ISO_NAME"
@@ -44,7 +62,7 @@ for target in "$ISO_PATH" "$CHECKSUM_PATH" "$INFO_PATH"; do
   [[ ! -e "$target" ]] || fail "Refusing to overwrite existing output: $target"
 done
 
-WORK_DIR="$(mktemp -d "${TMPDIR:-/var/tmp}/nexora-os-build.XXXXXX")"
+WORK_DIR="$(mktemp -d "$TMP_ROOT/nexora-os-build.XXXXXX")"
 printf 'Build workspace: %s\n' "$WORK_DIR"
 printf 'Build log: %s\n' "$WORK_DIR/build.log"
 
@@ -62,18 +80,42 @@ cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexor
   printf 'Started UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$WORK_DIR/build-inputs.txt"
 
-lb config   --mode ubuntu   --distribution resolute   --architectures amd64   --binary-images iso-hybrid   --bootloader grub-pc   --system live   --archive-areas "main restricted universe multiverse"   --mirror-bootstrap "$SNAPSHOT_MIRROR"   --mirror-chroot "$SNAPSHOT_MIRROR"   --mirror-chroot-security "$SNAPSHOT_MIRROR"   --mirror-binary "https://archive.ubuntu.com/ubuntu/"   --mirror-binary-security "https://security.ubuntu.com/ubuntu/"   --checksums sha256   --apt-recommends true   --apt-secure true   --security true   --updates true   --firmware-binary true   --firmware-chroot true   --debian-installer false   --linux-flavours generic   --image-name "nexora-26.04-amd64"   --iso-volume "NEXORA_2604"
+lb config \
+  --mode ubuntu \
+  --distribution resolute \
+  --architectures amd64 \
+  --binary-images iso-hybrid \
+  --bootloader grub-pc \
+  --system live \
+  --archive-areas "main restricted universe multiverse" \
+  --mirror-bootstrap "$SNAPSHOT_MIRROR" \
+  --mirror-chroot "$SNAPSHOT_MIRROR" \
+  --mirror-chroot-security "$SNAPSHOT_MIRROR" \
+  --mirror-binary "https://archive.ubuntu.com/ubuntu/" \
+  --mirror-binary-security "https://security.ubuntu.com/ubuntu/" \
+  --checksums sha256 \
+  --apt-recommends true \
+  --apt-secure true \
+  --security true \
+  --updates true \
+  --firmware-binary true \
+  --firmware-chroot true \
+  --debian-installer false \
+  --linux-flavours generic \
+  --image-name "nexora-26.04-amd64" \
+  --iso-volume "NEXORA_2604" 2>&1 | tee "$WORK_DIR/config.log"
 
 printf 'Starting live-build. Ubuntu mode is an experimental derivative path; any build failure must be investigated rather than bypassed.\n'
-set -o pipefail
 lb build 2>&1 | tee "$WORK_DIR/build.log"
 
 mapfile -t ISO_CANDIDATES < <(find "$WORK_DIR" -type f -name '*.iso' -print | sort)
 (( ${#ISO_CANDIDATES[@]} == 1 )) || fail "Expected exactly one generated ISO; found ${#ISO_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
 CANDIDATE="${ISO_CANDIDATES[0]}"
 
-xorriso -indev "$CANDIDATE" -report_el_torito plain > "$WORK_DIR/eltorito-report.txt" 2>&1 ||   fail "xorriso could not inspect the generated image. Workspace retained at $WORK_DIR."
-grep -qi "El Torito" "$WORK_DIR/eltorito-report.txt" ||   fail "Generated image has no detectable El Torito boot catalog. Workspace retained at $WORK_DIR."
+xorriso -indev "$CANDIDATE" -report_el_torito plain > "$WORK_DIR/eltorito-report.txt" 2>&1 || \
+  fail "xorriso could not inspect the generated image. Workspace retained at $WORK_DIR."
+grep -qi "El Torito" "$WORK_DIR/eltorito-report.txt" || \
+  fail "Generated image has no detectable El Torito boot catalog. Workspace retained at $WORK_DIR."
 
 install -m 0644 "$CANDIDATE" "$ISO_PATH"
 (
@@ -87,6 +129,7 @@ cp "$WORK_DIR/build-inputs.txt" "$INFO_PATH"
   printf 'SHA-256: '
   sha256sum "$ISO_PATH" | awk '{print $1}'
   printf 'El Torito report: %s\n' "$WORK_DIR/eltorito-report.txt"
+  printf 'Config log: %s\n' "$WORK_DIR/config.log"
   printf 'Build log: %s\n' "$WORK_DIR/build.log"
 } >> "$INFO_PATH"
 
