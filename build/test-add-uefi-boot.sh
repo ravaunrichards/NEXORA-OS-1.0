@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/nexora-uefi-test.XXXXXX")"
-trap 'rm -rf -- "$TMP_ROOT"' EXIT
+# CI runners are ephemeral; retain temporary files for failed-test diagnosis.
 
 for command_name in xorriso mcopy mdir dd; do
   command -v "$command_name" >/dev/null 2>&1 || {
