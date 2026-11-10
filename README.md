@@ -13,7 +13,7 @@ The intended audiences are home, professional, gaming, creator, and business use
 
 **This repository is at the initial build-foundation stage. It is not a finished operating system, and no production installer or release ISO is available.**
 
-The engineering image is an Ubuntu-based KDE Plasma live environment. An experimental Calamares installer configuration and launcher are being integrated, but real-disk installation is not approved until disposable-VM installation and data-preservation tests pass. NEXORA Classic, NEXORA Flow, custom applications, recovery, hardware qualification, and release signing still require implementation and tests.
+The engineering image is an Ubuntu-based KDE Plasma live environment with an experimental Calamares installer configuration and launcher. Real-disk installation is not approved until disposable-VM installation and data-preservation tests pass. NEXORA Classic, NEXORA Flow, custom applications, recovery, hardware qualification, and release signing still require implementation and tests.
 
 Never represent an engineering image as a complete or supported OS release.
 
