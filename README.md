@@ -24,8 +24,8 @@ See [Build instructions](build/README.md), [Build architecture](docs/BUILD-ARCHI
 A dated Ubuntu archive snapshot is required for every build. On an Ubuntu 26.04 AMD64 build host, install live-build and its tools, then run:
 
     sudo apt-get update
-    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin
-    sudo env NEXORA_SNAPSHOT=20261110T000000Z bash build/build-iso.sh
+    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux
+    sudo env NEXORA_SNAPSHOT=20261109T000000Z bash build/build-iso.sh
 
 The timestamp is an example archive snapshot, not proof that an image has been built. ISO files and SHA-256 checksums are written to dist/. Existing output files are never overwritten.
 
@@ -41,5 +41,9 @@ The timestamp is an example archive snapshot, not proof that an image has been b
 ## Project documentation
 
 - [Current milestone status](docs/PROJECT-STATUS.md)
+- [Repository governance and branch protection](docs/REPOSITORY-GOVERNANCE.md)
+- [Contribution workflow](CONTRIBUTING.md)
+- [Security reporting](SECURITY.md)
 - [Build architecture](docs/BUILD-ARCHITECTURE.md)
 - [Build and verification instructions](build/README.md)
+- [Release acceptance checklist](docs/RELEASE-ACCEPTANCE.md)
