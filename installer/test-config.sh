@@ -14,7 +14,18 @@ fail() {
   exit 1
 }
 
-for file in "$SETTINGS" "$PARTITION" "$PACKAGES" "$BRANDING" "$DESKTOP"; do
+for file in \
+  "$SETTINGS" \
+  "$PARTITION" \
+  "$PACKAGES" \
+  "$BRANDING" \
+  "$DESKTOP" \
+  "$CONFIG_ROOT/modules/unpackfs.conf" \
+  "$CONFIG_ROOT/modules/users.conf" \
+  "$CONFIG_ROOT/modules/displaymanager.conf" \
+  "$CONFIG_ROOT/modules/bootloader.conf" \
+  "$CONFIG_ROOT/modules/fstab.conf" \
+  "$CONFIG_ROOT/modules/welcome.conf"; do
   [[ -s "$file" ]] || fail "Required installer file missing or empty: $file"
 done
 
