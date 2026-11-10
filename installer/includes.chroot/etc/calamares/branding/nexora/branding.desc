@@ -1,0 +1,12 @@
+---
+componentName: nexora
+windowExpanding: fullscreen
+
+strings:
+  productName: "NEXORA OS"
+  shortProductName: "NEXORA"
+  version: "26.04"
+  shortVersion: "resolute"
+  versionedName: "NEXORA OS 26.04"
+  shortVersionedName: "NEXORA 26.04"
+  bootloaderEntryName: "NEXORA OS"
