@@ -117,4 +117,4 @@ wget -q -O "$TMP_ROOT/InRelease" \
   exit 1
 }
 
-printf 'NEXORA downloader tests passed: transient retries and exact-path snapshot package fallback.\n'
+printf 'NEXORA downloader tests passed: transient retries, exact-path .deb/index fallbacks, and pinned signed metadata.\n'
