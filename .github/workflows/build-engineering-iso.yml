@@ -17,7 +17,9 @@ permissions:
 
 concurrency:
   group: nexora-engineering-iso-${{ github.ref }}
-  cancel-in-progress: false
+  # One-time supersession of the obsolete pre-fallback build queue. Normal pushes
+  # and workflow_dispatch runs keep the non-cancelling, serial-build behavior.
+  cancel-in-progress: ${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: supersede obsolete ISO build' }}
 
 jobs:
   build:
