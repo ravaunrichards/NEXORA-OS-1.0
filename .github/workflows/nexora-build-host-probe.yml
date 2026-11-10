@@ -37,13 +37,6 @@ jobs:
             df -Pk "$path" | awk -v p="$path" 'END {printf "%s: %s KiB free\\n", p, $4}'
           done
 
-          printf '\nLarge preinstalled directories (inspection only; nothing is removed):\n'
-          for path in /usr/share/dotnet /usr/local/lib/android /opt/hostedtoolcache /usr/local/share/powershell /usr/share/swift /var/lib/docker /opt/az; do
-            if [[ -e "$path" ]]; then
-              sudo du -shx "$path" 2>/dev/null || true
-            fi
-          done
-
           printf '\nUbuntu live-build package candidate:\n'
           apt-cache policy live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin || true
 
