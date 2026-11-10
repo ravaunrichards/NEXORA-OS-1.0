@@ -30,7 +30,7 @@ To select another output directory:
 Build workspaces are retained for diagnosis and can be removed manually after reviewing the logs.
 
 
-Ubuntu 26.04 splits the former monolithic Linux firmware set into supported packages behind the explicit `linux-firmware` metapackage, including `linux-firmware-nvidia-graphics`. The build therefore uses `--firmware-chroot false` to prevent live-build's legacy automatic firmware-name selection from requesting the deleted `nouveau-firmware` package. This does **not** remove the explicitly listed `linux-firmware` package or its supported dependencies. The regression check `build/test-firmware-selection.sh` protects this configuration.
+Ubuntu 26.04 splits the former monolithic Linux firmware set into supported packages behind the explicit `linux-firmware` metapackage, including `linux-firmware-nvidia-graphics`. The build also passes `--memtest none` to skip live-build's legacy memtest boot-menu helper, which still expects the removed `memtest86+.bin` filename while Ubuntu's `memtest86+` 8.x package ships renamed binaries. This only omits the optional boot-menu memory tester; it does not remove the OS kernel or change installed-system memory diagnostics. The regression test `build/test-live-build-compatibility.sh` protects this setting. The build therefore uses `--firmware-chroot false` to prevent live-build's legacy automatic firmware-name selection from requesting the deleted `nouveau-firmware` package. This does **not** remove the explicitly listed `linux-firmware` package or its supported dependencies. The regression check `build/test-firmware-selection.sh` protects this configuration.
 
 ## Verify
 
