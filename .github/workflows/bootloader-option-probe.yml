@@ -1,0 +1,68 @@
+name: Verify NEXORA BIOS and UEFI bootloader configuration
+
+on:
+  push:
+    paths:
+      - ".github/workflows/bootloader-option-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - name: Install Ubuntu Resolute live-build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build=3.0~a57-1ubuntu54
+          lb --version
+          lb config --help | grep -E -- '--bootloaders?|--binary-images' || true
+
+      - name: Test both bootloader option forms in isolated directories
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/nexora-lb-probe/singular" "$RUNNER_TEMP/nexora-lb-probe/plural"
+
+          cd "$RUNNER_TEMP/nexora-lb-probe/singular"
+          if lb config --mode ubuntu --distribution resolute --architectures amd64 \
+            --binary-images iso-hybrid --bootloader syslinux \
+            --archive-areas "main restricted universe multiverse"; then
+            echo "SINGULAR_OPTION=accepted"
+            grep -R -nE 'BOOTLOADER|bootloader' config || true
+          else
+            echo "SINGULAR_OPTION=rejected"
+          fi
+
+          cd "$RUNNER_TEMP/nexora-lb-probe/plural"
+          if lb config --mode ubuntu --distribution resolute --architectures amd64 \
+            --binary-images iso-hybrid --bootloaders "syslinux grub-efi" \
+            --archive-areas "main restricted universe multiverse"; then
+            echo "PLURAL_OPTION=accepted"
+            grep -R -nE 'BOOTLOADER|bootloader' config || true
+          else
+            echo "PLURAL_OPTION=rejected"
+          fi
+
+          {
+            echo "## NEXORA bootloader configuration probe"
+            echo "Ubuntu runner: $(. /etc/os-release && printf '%s' "$PRETTY_NAME")"
+            echo
+            echo "### Singular option result"
+            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/singular/config" || true
+            echo
+            echo "### Plural option result"
+            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/plural/config" || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload generated live-build configs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-live-build-bootloader-probe
+          path: ${{ runner.temp }}/nexora-lb-probe/
+          if-no-files-found: warn
+          retention-days: 14
