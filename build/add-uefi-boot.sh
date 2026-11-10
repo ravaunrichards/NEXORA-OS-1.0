@@ -98,7 +98,7 @@ grub-mkstandalone \
 
 ESP_IMAGE="$WORK_DIR/nexora-efi.img"
 dd if=/dev/zero of="$ESP_IMAGE" bs=1M count=31 status=none
-mkfs.vfat -F 32 -n NEXORAESP "$ESP_IMAGE" > "$WORK_DIR/mkfs.log" 2>&1
+mkfs.vfat -F 16 -n NEXORAESP "$ESP_IMAGE" > "$WORK_DIR/mkfs.log" 2>&1
 mmd -i "$ESP_IMAGE" ::/EFI
 mmd -i "$ESP_IMAGE" ::/EFI/BOOT
 mcopy -i "$ESP_IMAGE" "$BOOTX64" ::/EFI/BOOT/BOOTX64.EFI
