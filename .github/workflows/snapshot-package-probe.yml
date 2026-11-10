@@ -1,0 +1,54 @@
+name: Diagnose NEXORA Ubuntu snapshot package URLs
+
+on:
+  push:
+    paths:
+      - ".github/workflows/snapshot-package-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    env:
+      SNAPSHOT: "20261109T000000Z"
+    steps:
+      - name: Probe snapshot and archive package URLs without installing
+        shell: bash
+        run: |
+          set -u
+          base="https://snapshot.ubuntu.com/ubuntu/$SNAPSHOT"
+          archive="https://archive.ubuntu.com/ubuntu"
+          paths=(
+            "pool/main/p/p11-kit/libp11-kit0_0.26.2-2_amd64.deb"
+            "pool/main/p/pam/libpam-modules_1.7.0-5ubuntu3_amd64.deb"
+            "pool/main/a/adduser/adduser_3.153ubuntu1_all.deb"
+            "pool/main/s/systemd/systemd_259.5-0ubuntu3_amd64.deb"
+          )
+          {
+            echo "## Ubuntu snapshot package URL diagnostics"
+            echo "Snapshot: $SNAPSHOT"
+            echo
+            for relative in "${paths[@]}"; do
+              echo "### $relative"
+              for label in snapshot archive; do
+                if [[ "$label" == snapshot ]]; then url="$base/$relative"; else url="$archive/$relative"; fi
+                echo "- $label: $url"
+                curl --location --silent --show-error --output /dev/null \
+                  --max-time 35 --write-out 'HTTP %{http_code}; downloaded %{size_download} bytes; final URL %{url_effective}\\n' \
+                  "$url" || echo "curl_exit=$?"
+              done
+              echo
+            done
+          } | tee "$RUNNER_TEMP/snapshot-probe.txt"
+      - name: Upload diagnostic results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-snapshot-url-diagnostic
+          path: ${{ runner.temp }}/snapshot-probe.txt
+          if-no-files-found: warn
+          retention-days: 14
