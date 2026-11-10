@@ -28,7 +28,7 @@ source /etc/os-release
 HOST_ARCH="$(dpkg --print-architecture)"
 [[ "$HOST_ARCH" == "amd64" ]] || fail "Build host must be amd64; detected: $HOST_ARCH."
 
-for command_name in lb debootstrap mksquashfs xorriso grub-mkrescue sha256sum df awk find; do
+for command_name in lb debootstrap mksquashfs xorriso grub-mkrescue sha256sum df awk find wget; do
   command -v "$command_name" >/dev/null 2>&1 || fail "Missing build tool: $command_name. Install the packages listed in build/README.md."
 done
 
@@ -68,6 +68,8 @@ done
 WORK_DIR="$(mktemp -d "$TMP_ROOT/nexora-os-build.XXXXXX")"
 printf 'Build workspace: %s\n' "$WORK_DIR"
 printf 'Build log: %s\n' "$WORK_DIR/build.log"
+RETRY_BIN="$WORK_DIR/retry-bin"
+bash "$ROOT_DIR/build/patch-debootstrap-download-retries.sh" "$RETRY_BIN"
 
 SNAPSHOT_MIRROR="https://snapshot.ubuntu.com/ubuntu/$SNAPSHOT/"
 cd "$WORK_DIR"
@@ -109,7 +111,7 @@ lb config \
   --iso-volume "NEXORA_2604" 2>&1 | tee "$WORK_DIR/config.log"
 
 printf 'Starting live-build. Ubuntu mode is an experimental derivative path; any build failure must be investigated rather than bypassed.\n'
-lb build 2>&1 | tee "$WORK_DIR/build.log"
+PATH="$RETRY_BIN:$PATH" lb build 2>&1 | tee "$WORK_DIR/build.log"
 
 mapfile -t ISO_CANDIDATES < <(find "$WORK_DIR" -type f -name '*.iso' -print | sort)
 (( ${#ISO_CANDIDATES[@]} == 1 )) || fail "Expected exactly one generated ISO; found ${#ISO_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
