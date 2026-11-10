@@ -11,7 +11,7 @@ The first installer integration uses Ubuntu Resolute's Calamares 3.3.14 package 
 - NEXORA-branded Calamares settings and module configuration.
 - A live desktop application-menu entry named **Install NEXORA OS**.
 - A squashfs deployment source matching the current Casper live-image layout.
-- GRUB + initramfs-tools install sequence for the Ubuntu target.
+- GRUB + initramfs-tools install sequence for the Ubuntu target, with existing-OS discovery enabled for boot-menu generation.
 - A required explicit partitioning choice. No erase/replace/alongside/manual option is preselected.
 - A mandatory final installation confirmation before Calamares starts its execution phase.
 - Cancellation is disabled only after the final confirmation and execution begins, reducing the chance of leaving a half-written installation.
