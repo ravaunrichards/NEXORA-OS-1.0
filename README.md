@@ -55,4 +55,5 @@ The timestamp is an example archive snapshot, not proof that an image has been b
 - [Build architecture](docs/BUILD-ARCHITECTURE.md)
 - [Build and verification instructions](build/README.md)
 - [Installer architecture and disk-safety plan](docs/INSTALLER-ARCHITECTURE.md)
+- [Calamares integration and test status](installer/README.md)
 - [Release acceptance checklist](docs/RELEASE-ACCEPTANCE.md)
