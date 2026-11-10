@@ -17,12 +17,12 @@ permissions:
 
 concurrency:
   group: nexora-engineering-iso-${{ github.ref }}
-  # One-time supersession of the obsolete pre-fallback build queue. Normal pushes
-  # and workflow_dispatch runs keep the non-cancelling, serial-build behavior.
-  cancel-in-progress: ${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: supersede obsolete ISO build' }}
+  cancel-in-progress: false
 
 jobs:
   build:
+    # This one-time restoration commit must not enqueue a duplicate ISO build.
+    if: ${{ github.event_name != 'push' || github.event.head_commit.message != 'ci: restore non-cancelling ISO build policy' }}
     name: Build Ubuntu 26.04 AMD64 engineering ISO
     runs-on: ubuntu-26.04
     timeout-minutes: 180
