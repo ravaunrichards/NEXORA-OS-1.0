@@ -18,7 +18,7 @@ Status terms:
 | System services | Planned | Network, audio, Bluetooth, power, storage, printing, and update integration must be validated. |
 | Applications | Planned | No NEXORA application suite or app-store integration. |
 | Installer | Planned | No installer, partitioning, dual-boot, or encryption setup. |
-| Bootable ISO | Partial | Guarded Ubuntu 26.04 AMD64 live-build pipeline, snapshot pinning, isolated download retries, checksum generation, and El Torito inspection are implemented. No successful ISO artifact or UEFI/BIOS boot result is verified yet. |
+| Bootable ISO | Partial | Guarded Ubuntu 26.04 AMD64 live-build pipeline, pinned snapshot, isolated download retries, BIOS-preserving remaster, and UEFI El Torito EFI image are implemented. Synthetic-image CI confirms both BIOS and UEFI entries and extracts `EFI/BOOT/BOOTX64.EFI`. A full NEXORA ISO build, firmware boot tests, and installation tests remain outstanding. |
 | Hardware compatibility | Unverified | No hardware test matrix or physical-device results. |
 | Security | Planned | Threat model, Secure Boot signing, AppArmor policy, firewall defaults, update trust, and security tests remain. |
 | Recovery | Planned | No recovery environment, rollback workflow, or restore tests. |
@@ -26,21 +26,12 @@ Status terms:
 
 ## Latest automated evidence
 
-- Latest completed validation: Validate NEXORA build foundation, run #20.
-- Result: PASS (manifest/config validation, retry-wrapper behavioral test, and Bash syntax checks).
-- Commit: `9e69924c26ef93b5a281d7ff9fc283f4b3e7789b`.
-- Run: [GitHub Actions run #20](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42777382144).
-- The retry test simulated a transient wget failure and confirmed recovery on the next attempt.
-- The test confirms the system wget and installed debootstrap files are not modified.
-
-## ISO build history and current checkpoint
-
-- Build runs #1 and #2 stopped at pre-build validation/configuration errors; those were corrected.
-- Build run #3 reached debootstrap but failed while downloading several packages. The signed snapshot indexes were retrieved; the failed package URLs later returned HTTP 200 in a separate read-only diagnostic.
-- A bounded, four-attempt wget retry wrapper now runs only inside the temporary build workspace. It uses increasing short delays, preserves package checksum/signature checks, and does not modify system tools.
-- The Ubuntu 26.04 AMD64 runner passed the host gate (15.61 GiB RAM and 88 GiB available disk at probe time).
-- Engineering ISO build run #9 is using the retry-enabled builder. Run #10 is using the latest commit with the narrower workflow triggers and concurrency guard.
-- No completed ISO artifact, successful UEFI/BIOS boot, or installation test has been verified yet.
+- Latest completed build-foundation validation: [run #47](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42816621471), PASS.
+- Latest isolated UEFI construction test: [run #9](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42816621424), PASS.
+- Tested commit: `5db44259ba70503c91facae7046370d9f814dffe`.
+- The synthetic-image test confirmed a BIOS El Torito entry and a UEFI El Torito entry, preserved the BIOS image, extracted the EFI system image, and verified `EFI/BOOT/BOOTX64.EFI`.
+- This is structural construction evidence only. It does not prove that firmware boots the image or that the live system works.
+- Latest full ISO build: [run #22](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42816621757), currently in the live-build stage. No image artifact has been confirmed yet.
 
 Repository currently has one main branch, no pull requests, no issues, and no releases. The main branch is not protected.
 
