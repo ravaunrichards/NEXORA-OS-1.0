@@ -5,22 +5,18 @@ ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/nexora-uefi-test.XXXXXX")"
 trap 'rm -rf -- "$TMP_ROOT"' EXIT
 
-for command_name in xorriso mcopy mdir; do
+for command_name in xorriso mcopy mdir dd; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'ERROR: Test dependency missing: %s\n' "$command_name" >&2
     exit 1
   }
 done
 
-ISOLINUX_SOURCE="/usr/share/live/build/bootloaders/isolinux/isolinux.bin"
-[[ -s "$ISOLINUX_SOURCE" ]] || {
-  printf 'ERROR: Ubuntu live-build isolinux boot image not found: %s\n' "$ISOLINUX_SOURCE" >&2
-  exit 1
-}
-
 SOURCE_ROOT="$TMP_ROOT/source"
 mkdir -p "$SOURCE_ROOT/isolinux" "$SOURCE_ROOT/casper"
-cp "$ISOLINUX_SOURCE" "$SOURCE_ROOT/isolinux/isolinux.bin"
+# xorriso only needs a structurally valid BIOS El Torito image for this
+# remastering test; real BIOS execution is tested against the finished ISO.
+dd if=/dev/zero of="$SOURCE_ROOT/isolinux/isolinux.bin" bs=2048 count=4 status=none
 printf 'synthetic-kernel-for-structure-test\n' > "$SOURCE_ROOT/casper/vmlinuz"
 printf 'synthetic-initrd-for-structure-test\n' > "$SOURCE_ROOT/casper/initrd"
 
