@@ -1,0 +1,139 @@
+name: NEXORA BIOS and UEFI firmware boot smoke tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_run_id:
+        description: GitHub Actions run ID containing the completed NEXORA ISO artifact
+        required: true
+        type: string
+      artifact_name:
+        description: Exact artifact name from the ISO build run (for example NEXORA-26.04-amd64-engineering-26)
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  firmware-boot:
+    name: Boot NEXORA ISO with BIOS and UEFI firmware
+    runs-on: ubuntu-26.04
+    timeout-minutes: 50
+    steps:
+      - name: Check out NEXORA verification scripts
+        uses: actions/checkout@v4
+
+      - name: Install QEMU and OVMF firmware
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 ovmf xorriso
+
+      - name: Download the selected ISO build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.artifact_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/nexora-artifact
+
+      - name: Verify ISO checksum and boot-image structure
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mapfile -t isos < <(find "$RUNNER_TEMP/nexora-artifact" -type f -name '*.iso' -print | sort)
+          [[ "${#isos[@]}" -eq 1 ]] || {
+            echo "::error::Expected exactly one ISO in the selected artifact; found ${#isos[@]}."
+            find "$RUNNER_TEMP/nexora-artifact" -maxdepth 4 -type f -print
+            exit 1
+          }
+          ISO_PATH="${isos[0]}"
+          echo "NEXORA_ISO=$ISO_PATH" >> "$GITHUB_ENV"
+          checksum="$ISO_PATH.sha256"
+          [[ -s "$checksum" ]] || {
+            echo "::error::The selected ISO artifact has no adjacent SHA-256 manifest."
+            exit 1
+          }
+          (cd "$(dirname "$ISO_PATH")" && sha256sum -c "$(basename "$checksum")")
+          bash build/verify-iso.sh "$ISO_PATH"
+
+      - name: Run legacy BIOS live-system boot test
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          log="$RUNNER_TEMP/nexora-bios-boot.log"
+          set +e
+          timeout --signal=TERM --kill-after=20s 900s \
+            qemu-system-x86_64 \
+              -machine pc,accel=tcg -cpu max -m 8192 -smp 2 \
+              -display none -serial "file:$log" -monitor none \
+              -no-reboot -nic none \
+              -cdrom "$NEXORA_ISO" -boot order=d
+          qemu_status=$?
+          set -e
+          echo "QEMU BIOS exit status: $qemu_status"
+          if grep -Eiq 'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
+            echo "BIOS firmware boot reached the live userspace target."
+          else
+            echo "::error::BIOS firmware boot did not reach a confirmed live userspace target."
+            tail -n 160 "$log" || true
+            exit 1
+          fi
+
+      - name: Run UEFI live-system boot test with OVMF
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mapfile -t code_candidates < <(find /usr/share/OVMF -maxdepth 1 -type f -name 'OVMF_CODE*.fd' ! -iname '*secboot*' -print | sort)
+          [[ "${#code_candidates[@]}" -gt 0 ]] || {
+            echo "::error::No non-Secure-Boot OVMF_CODE firmware image was installed."
+            exit 1
+          }
+
+          OVMF_CODE="${code_candidates[0]}"
+          code_name="$(basename "$OVMF_CODE")"
+          vars_name="${code_name/OVMF_CODE/OVMF_VARS}"
+          OVMF_VARS="$(dirname "$OVMF_CODE")/$vars_name"
+          [[ -s "$OVMF_VARS" ]] || {
+            echo "::error::Matching OVMF variable template not found: $OVMF_VARS"
+            exit 1
+          }
+
+          vars_copy="$RUNNER_TEMP/OVMF_VARS-test.fd"
+          cp "$OVMF_VARS" "$vars_copy"
+          log="$RUNNER_TEMP/nexora-uefi-boot.log"
+
+          set +e
+          timeout --signal=TERM --kill-after=20s 900s \
+            qemu-system-x86_64 \
+              -machine q35,accel=tcg -cpu max -m 8192 -smp 2 \
+              -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" \
+              -drive "if=pflash,format=raw,file=$vars_copy" \
+              -display none -serial "file:$log" -monitor none \
+              -no-reboot -nic none \
+              -cdrom "$NEXORA_ISO" -boot order=d
+          qemu_status=$?
+          set -e
+          echo "QEMU UEFI exit status: $qemu_status"
+          if grep -Eiq 'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
+            echo "UEFI firmware boot reached the live userspace target."
+          else
+            echo "::error::UEFI firmware boot did not reach a confirmed live userspace target."
+            tail -n 160 "$log" || true
+            exit 1
+          fi
+
+      - name: Upload firmware boot logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-firmware-boot-logs-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/nexora-bios-boot.log
+            ${{ runner.temp }}/nexora-uefi-boot.log
+          if-no-files-found: warn
+          retention-days: 30
