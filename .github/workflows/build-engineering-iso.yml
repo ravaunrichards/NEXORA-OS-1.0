@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - ".github/workflows/build-engineering-iso.yml"
+      - "build/**"
   workflow_dispatch:
 
 permissions:
