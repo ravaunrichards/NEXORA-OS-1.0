@@ -47,6 +47,7 @@ required_files=(
   "$ROOT_DIR/build/verify-iso.sh"
   "$ROOT_DIR/build/patch-debootstrap-download-retries.sh"
   "$ROOT_DIR/build/test-download-retry-wrapper.sh"
+  "$ROOT_DIR/build/test-firmware-selection.sh"
   "$ROOT_DIR/build/add-uefi-boot.sh"
   "$ROOT_DIR/build/test-add-uefi-boot.sh"
 )
@@ -74,6 +75,7 @@ end
 RUBY
 
 bash "$ROOT_DIR/build/test-download-retry-wrapper.sh"
+bash "$ROOT_DIR/build/test-firmware-selection.sh"
 
 printf 'NEXORA repository validation passed. Packages checked: %s; YAML files checked: %s.\n' \
   "$package_count" "$(find "$ROOT_DIR/.github" -type f \( -name '*.yml' -o -name '*.yaml' \) | wc -l | xargs)"

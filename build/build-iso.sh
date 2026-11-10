@@ -121,7 +121,7 @@ lb config \
   --apt-secure true \
   --security true \
   --firmware-binary true \
-  --firmware-chroot true \
+  --firmware-chroot false \
   --debian-installer false \
   --linux-flavours generic \
   --iso-application "NEXORA OS 26.04" \

@@ -16,8 +16,6 @@ on:
       - Build NEXORA engineering ISO
     types:
       - completed
-    branches:
-      - main
 
 permissions:
   actions: read
