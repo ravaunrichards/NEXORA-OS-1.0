@@ -18,7 +18,7 @@ Status terms:
 | System services | Planned | Network, audio, Bluetooth, power, storage, printing, and update integration must be validated. |
 | Applications | Planned | No NEXORA application suite or app-store integration. |
 | Installer | Planned | No installer, partitioning, dual-boot, or encryption setup. |
-| Bootable ISO | Partial | Guarded Ubuntu 26.04 AMD64 live-build pipeline, pinned snapshot, isolated download retries, BIOS-preserving remaster, and UEFI El Torito EFI image are implemented. Synthetic-image CI confirms both BIOS and UEFI entries and extracts `EFI/BOOT/BOOTX64.EFI`. A full NEXORA ISO build, firmware boot tests, and installation tests remain outstanding. |
+| Bootable ISO | Partial | Guarded Ubuntu 26.04 AMD64 live-build pipeline, pinned snapshot, isolated download retries, BIOS-preserving remaster, UEFI El Torito image, and hybrid USB EFI MBR marker are implemented. Synthetic-image CI confirms BIOS and UEFI entries, `EFI/BOOT/BOOTX64.EFI`, and MBR partition type `0xEF`. Full NEXORA image generation and firmware boot tests remain outstanding. |
 | Hardware compatibility | Unverified | No hardware test matrix or physical-device results. |
 | Security | Planned | Threat model, Secure Boot signing, AppArmor policy, firewall defaults, update trust, and security tests remain. |
 | Recovery | Planned | No recovery environment, rollback workflow, or restore tests. |
@@ -26,12 +26,13 @@ Status terms:
 
 ## Latest automated evidence
 
-- Latest completed build-foundation validation: [run #47](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42816621471), PASS.
-- Latest isolated UEFI construction test: [run #9](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42816621424), PASS.
-- Tested commit: `5db44259ba70503c91facae7046370d9f814dffe`.
-- The synthetic-image test confirmed a BIOS El Torito entry and a UEFI El Torito entry, preserved the BIOS image, extracted the EFI system image, and verified `EFI/BOOT/BOOTX64.EFI`.
-- This is structural construction evidence only. It does not prove that firmware boots the image or that the live system works.
-- Latest full ISO build: [run #22](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42816621757), currently in the live-build stage. No image artifact has been confirmed yet.
+- Latest completed repository validation: [run #53](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818164117), PASS.
+- Latest BIOS/UEFI/hybrid construction test: [run #12](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42817673330), PASS.
+- UEFI test commit: `c0557133f0da16203e0df7dfa4a3537cc167ba1e`; it confirms both BIOS and UEFI El Torito entries, extracts and checks `EFI/BOOT/BOOTX64.EFI`, and verifies MBR EFI partition type `0xEF`.
+- Production ISO verification now also requires BIOS and UEFI El Torito entries and the MBR `0xEF` marker. The latest validation for this change passed.
+- Structural construction evidence does not prove firmware successfully boots the complete NEXORA live environment.
+- Full ISO build run #25 is still active on the earlier commit [run #25](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42817673502). Latest full build run #26, which includes the production `0xEF` check, is queued [run #26](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818158947).
+- No completed NEXORA ISO artifact, real UEFI/BIOS firmware boot, or installation test has been verified yet.
 
 Repository currently has one main branch, no pull requests, no issues, and no releases. The main branch is not protected.
 
