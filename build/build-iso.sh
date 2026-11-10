@@ -69,9 +69,24 @@ WORK_DIR="$(mktemp -d "$TMP_ROOT/nexora-os-build.XXXXXX")"
 printf 'Build workspace: %s\n' "$WORK_DIR"
 printf 'Build log: %s\n' "$WORK_DIR/build.log"
 RETRY_BIN="$WORK_DIR/retry-bin"
+SNAPSHOT_MIRROR="https://snapshot.ubuntu.com/ubuntu/$SNAPSHOT"
+ARCHIVE_MIRROR="https://archive.ubuntu.com/ubuntu"
+DOWNLOAD_LOG="${NEXORA_DOWNLOAD_LOG:-${RUNNER_TEMP:-$WORK_DIR}/nexora-download-fallback.log}"
+mkdir -p "$(dirname -- "$DOWNLOAD_LOG")"
+: > "$DOWNLOAD_LOG"
 bash "$ROOT_DIR/build/patch-debootstrap-download-retries.sh" "$RETRY_BIN"
 
-SNAPSHOT_MIRROR="https://snapshot.ubuntu.com/ubuntu/$SNAPSHOT"
+# Preserve signed package metadata from the dated snapshot while allowing
+# debootstrap to fetch only checksum-pinned, version-specific .deb objects
+# from Ubuntu's archive if the snapshot's package endpoint is unavailable.
+export NEXORA_SNAPSHOT_MIRROR="$SNAPSHOT_MIRROR"
+export NEXORA_ARCHIVE_MIRROR="$ARCHIVE_MIRROR"
+export NEXORA_DOWNLOAD_LOG="$DOWNLOAD_LOG"
+export PATH="$RETRY_BIN:$PATH"
+printf 'Pinned metadata mirror: %s\n' "$NEXORA_SNAPSHOT_MIRROR"
+printf 'Exact-path package object fallback: %s\n' "$NEXORA_ARCHIVE_MIRROR"
+printf 'Private downloader: %s\n' "$(command -v wget)"
+
 cd "$WORK_DIR"
 mkdir -p config/package-lists
 cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
@@ -80,7 +95,8 @@ cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexor
   printf 'NEXORA OS engineering ISO build\n'
   printf 'Release: Ubuntu 26.04 (resolute)\n'
   printf 'Architecture: amd64\n'
-  printf 'Ubuntu snapshot: %s\n' "$SNAPSHOT"
+  printf 'Ubuntu snapshot metadata: %s\n' "$SNAPSHOT"
+  printf 'Package object fallback: %s (same versioned pool path; debootstrap validates package checksum and size)\n' "$ARCHIVE_MIRROR"
   printf 'Repository commit: %s\n' "$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf unknown)"
   printf 'Started UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$WORK_DIR/build-inputs.txt"
@@ -113,7 +129,7 @@ lb config \
   --iso-volume "NEXORA_2604" 2>&1 | tee "$WORK_DIR/config.log"
 
 printf 'Starting live-build. Ubuntu mode is an experimental derivative path; any build failure must be investigated rather than bypassed.\n'
-PATH="$RETRY_BIN:$PATH" lb build 2>&1 | tee "$WORK_DIR/build.log"
+lb build 2>&1 | tee "$WORK_DIR/build.log"
 
 mapfile -t ISO_CANDIDATES < <(find "$WORK_DIR" -type f -name '*.iso' -print | sort)
 (( ${#ISO_CANDIDATES[@]} == 1 )) || fail "Expected exactly one generated ISO; found ${#ISO_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
@@ -150,6 +166,7 @@ cp "$WORK_DIR/build-inputs.txt" "$INFO_PATH"
   printf 'Hybrid system area report: %s\n' "$WORK_DIR/system-area-report.txt"
   printf 'Config log: %s\n' "$WORK_DIR/config.log"
   printf 'Build log: %s\n' "$WORK_DIR/build.log"
+  printf 'Download fallback log: %s\n' "$DOWNLOAD_LOG"
 } >> "$INFO_PATH"
 
 printf '\nBuild produced an engineering ISO: %s\n' "$ISO_PATH"
