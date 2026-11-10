@@ -48,11 +48,28 @@ jobs:
               echo
             done
           } | tee "$RUNNER_TEMP/snapshot-probe.txt"
+      - name: Inspect Ubuntu Resolute debootstrap download implementation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends debootstrap
+          {
+            echo "## debootstrap implementation details"
+            echo "Package: $(dpkg-query -W -f='${Version}' debootstrap)"
+            for file in /usr/sbin/debootstrap /usr/share/debootstrap/functions; do
+              echo
+              echo "### $file"
+              grep -nE 'PATH=|wget|download_file|download.*\(' "$file" | head -180 || true
+            done
+          } | tee "$RUNNER_TEMP/debootstrap-download-implementation.txt"
       - name: Upload diagnostic results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: NEXORA-snapshot-url-diagnostic
-          path: ${{ runner.temp }}/snapshot-probe.txt
+          path: |
+            ${{ runner.temp }}/snapshot-probe.txt
+            ${{ runner.temp }}/debootstrap-download-implementation.txt
           if-no-files-found: warn
           retention-days: 14
