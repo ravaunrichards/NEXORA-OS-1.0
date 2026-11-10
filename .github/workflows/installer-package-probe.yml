@@ -1,0 +1,73 @@
+name: Validate NEXORA Calamares installer dependencies
+
+on:
+  push:
+    paths:
+      - "installer/**"
+      - "build/packages/nexora-base.list.chroot"
+      - ".github/workflows/installer-package-probe.yml"
+  pull_request:
+    paths:
+      - "installer/**"
+      - "build/packages/nexora-base.list.chroot"
+      - ".github/workflows/installer-package-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-probe:
+    name: Check Ubuntu Resolute Calamares modules and tools
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out NEXORA source
+        uses: actions/checkout@v4
+
+      - name: Install Calamares and live-install dependencies
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            calamares squashfs-tools initramfs-tools grub2-common \
+            grub-pc-bin grub-efi-amd64-bin efibootmgr os-prober
+
+      - name: Verify every configured Calamares module exists
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          module_dir=""
+          for candidate in /usr/lib/calamares/modules /usr/lib/*/calamares/modules; do
+            if [[ -s "$candidate/partition/module.desc" ]]; then
+              module_dir="$candidate"
+              break
+            fi
+          done
+          [[ -n "$module_dir" ]] || {
+            echo "::error::Calamares partition module was not installed."
+            dpkg -L calamares
+            exit 1
+          }
+
+          for module in welcome locale keyboard partition users summary mount unpackfs machineid fstab localecfg displaymanager networkcfg hwclock initramfscfg initramfs grubcfg bootloader packages shellprocess umount finished; do
+            [[ -s "$module_dir/$module/module.desc" ]] || {
+              echo "::error::Required Calamares module is missing: $module"
+              exit 1
+            }
+          done
+
+          for command_name in unsquashfs grub-install grub-mkconfig efibootmgr; do
+            command -v "$command_name" >/dev/null 2>&1 || {
+              echo "::error::Required installer command is missing: $command_name"
+              exit 1
+            }
+          done
+          dpkg-query -W -f='${Package} ${Version}\n' calamares
+
+      - name: Validate NEXORA installer safety configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash installer/test-config.sh

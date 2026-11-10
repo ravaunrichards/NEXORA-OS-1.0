@@ -88,8 +88,9 @@ printf 'Exact-path package object fallback: %s\n' "$NEXORA_ARCHIVE_MIRROR"
 printf 'Private downloader: %s\n' "$(command -v wget)"
 
 cd "$WORK_DIR"
-mkdir -p config/package-lists
+mkdir -p config/package-lists config/includes.chroot
 cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
+cp -a "$ROOT_DIR/installer/includes.chroot/." config/includes.chroot/
 
 {
   printf 'NEXORA OS engineering ISO build\n'
@@ -108,6 +109,7 @@ lb config \
   --architectures amd64 \
   --binary-images iso-hybrid \
   --bootloader syslinux \
+  --memtest none \
   --bootappend-live "console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console" \
   --system live \
   --archive-areas "main restricted universe multiverse" \
@@ -172,4 +174,4 @@ cp "$WORK_DIR/build-inputs.txt" "$INFO_PATH"
 printf '\nBuild produced an engineering ISO: %s\n' "$ISO_PATH"
 printf 'Checksum: %s\n' "$CHECKSUM_PATH"
 printf 'Build workspace retained for inspection: %s\n' "$WORK_DIR"
-printf 'IMPORTANT: Boot-test in both UEFI and BIOS virtual machines before treating this image as usable. No disk installer is included.\n'
+printf 'IMPORTANT: Boot-test in both UEFI and BIOS virtual machines before treating this image as usable. The included Calamares installer is experimental; do not install on real disks until disposable-VM acceptance tests pass.\n'
