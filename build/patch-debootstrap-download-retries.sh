@@ -36,9 +36,12 @@ log_message() {
 args=("$@")
 package_url=""
 package_url_index=-1
+index_url=""
+index_url_index=-1
 
-# Bootstrap and chroot package indexes stay on the pinned snapshot.
-# Only version-specific .deb objects may use the archive transport fallback.
+# Release signatures and package-selection metadata remain pinned.
+# Only version-specific .deb objects and checksum-addressed Packages indexes
+# may use an exact-path archive transport fallback.
 if [[ -n "$SNAPSHOT_MIRROR" ]]; then
   for index in "${!args[@]}"; do
     candidate="${args[$index]}"
@@ -46,6 +49,15 @@ if [[ -n "$SNAPSHOT_MIRROR" ]]; then
       package_url="$candidate"
       package_url_index="$index"
       break
+    fi
+
+    if [[ "$candidate" == "$SNAPSHOT_MIRROR"/* ]]; then
+      relative="${candidate#"$SNAPSHOT_MIRROR"/}"
+      if [[ "$relative" =~ ^dists/[^/]+/[^/]+/binary-[^/]+/Packages(\.(gz|xz|bz2))?$ ]]; then
+        index_url="$candidate"
+        index_url_index="$index"
+        break
+      fi
     fi
   done
 fi
@@ -76,6 +88,40 @@ if [[ "$package_url_index" -ge 0 ]]; then
 
     if [[ "$attempt" -lt 4 ]]; then
       log_message "NEXORA package download: retrying archive fallback (attempt $attempt of 4) for $package_path"
+      sleep "$attempt"
+    fi
+  done
+
+  exit "$last_status"
+fi
+
+if [[ "$index_url_index" -ge 0 ]]; then
+  index_path="${index_url#"$SNAPSHOT_MIRROR"/}"
+  archive_url="${ARCHIVE_MIRROR%/}/$index_path"
+
+  # Try the pinned snapshot first. If its index object is unavailable, fetch
+  # the identical relative path from the Ubuntu archive. Debootstrap checks
+  # the downloaded index against the hash and size in the signed snapshot
+  # Release file before accepting it; a different live index is rejected.
+  if "$REAL_WGET" --timeout=45 --tries=1 "$@"; then
+    log_message "NEXORA package index: pinned snapshot served $index_path"
+    exit 0
+  fi
+
+  log_message "NEXORA package index: snapshot object failed; trying exact-path archive fallback for $index_path (debootstrap must verify signed-snapshot checksum and size)"
+  args[$index_url_index]="$archive_url"
+  last_status=1
+
+  for attempt in 1 2 3 4; do
+    if "$REAL_WGET" --timeout=90 --tries=1 "${args[@]}"; then
+      log_message "NEXORA package index: archive fallback retrieved $index_path; debootstrap must validate signed-snapshot checksum and size"
+      exit 0
+    else
+      last_status=$?
+    fi
+
+    if [[ "$attempt" -lt 4 ]]; then
+      log_message "NEXORA package index: retrying exact-path archive fallback (attempt $attempt of 4) for $index_path"
       sleep "$attempt"
     fi
   done

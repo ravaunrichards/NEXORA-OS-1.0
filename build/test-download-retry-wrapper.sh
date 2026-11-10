@@ -68,4 +68,53 @@ grep -Fxq "https://snapshot.test/ubuntu/20261109T000000Z/pool/main/example/examp
 grep -Fxq "https://archive.test/ubuntu/pool/main/example/example_1.2.3_amd64.deb" "$FALLBACK_CALLS"
 grep -q "debootstrap must validate the pinned checksum and size" "$FALLBACK_LOG"
 
+# Prove that snapshot Packages indexes may use only the exact same relative
+# path on archive.ubuntu.com. Debootstrap verifies the bytes against the signed
+# snapshot Release hash and size before accepting the index.
+INDEX_WGET="$TMP_ROOT/index-wget"
+INDEX_CALLS="$TMP_ROOT/index-calls"
+INDEX_LOG="$TMP_ROOT/index.log"
+cat > "$INDEX_WGET" <<'INDEX'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+url="\${!#}"
+printf '%s\n' "$url" >> "\${NEXORA_TEST_INDEX_CALLS:?}"
+case "$url" in
+  https://snapshot.test/ubuntu/20261109T000000Z/dists/resolute/main/binary-amd64/Packages.xz) exit 8 ;;
+  https://archive.test/ubuntu/dists/resolute/main/binary-amd64/Packages.xz) exit 0 ;;
+  https://snapshot.test/ubuntu/20261109T000000Z/dists/resolute/InRelease) exit 0 ;;
+  *) printf 'Unexpected URL in index fallback test: %s\n' "$url" >&2; exit 90 ;;
+esac
+INDEX
+chmod 0755 "$INDEX_WGET"
+
+NEXORA_REAL_WGET="$INDEX_WGET" bash "$ROOT_DIR/build/patch-debootstrap-download-retries.sh" "$RETRY_BIN"
+NEXORA_SNAPSHOT_MIRROR="https://snapshot.test/ubuntu/20261109T000000Z" \
+NEXORA_ARCHIVE_MIRROR="https://archive.test/ubuntu" \
+NEXORA_DOWNLOAD_LOG="$INDEX_LOG" \
+NEXORA_TEST_INDEX_CALLS="$INDEX_CALLS" \
+PATH="$RETRY_BIN:$PATH" \
+wget -q -O "$TMP_ROOT/Packages.xz" \
+  "https://snapshot.test/ubuntu/20261109T000000Z/dists/resolute/main/binary-amd64/Packages.xz"
+
+[[ "$(wc -l < "$INDEX_CALLS" | xargs)" == 2 ]] || {
+  printf 'ERROR: Expected snapshot Packages attempt plus one exact-path archive fallback.\n' >&2
+  exit 1
+}
+grep -Fxq "https://snapshot.test/ubuntu/20261109T000000Z/dists/resolute/main/binary-amd64/Packages.xz" "$INDEX_CALLS"
+grep -Fxq "https://archive.test/ubuntu/dists/resolute/main/binary-amd64/Packages.xz" "$INDEX_CALLS"
+grep -q "debootstrap must validate signed-snapshot checksum and size" "$INDEX_LOG"
+
+# Signed snapshot metadata itself must never be redirected.
+NEXORA_SNAPSHOT_MIRROR="https://snapshot.test/ubuntu/20261109T000000Z" \
+NEXORA_ARCHIVE_MIRROR="https://archive.test/ubuntu" \
+NEXORA_TEST_INDEX_CALLS="$INDEX_CALLS" \
+PATH="$RETRY_BIN:$PATH" \
+wget -q -O "$TMP_ROOT/InRelease" \
+  "https://snapshot.test/ubuntu/20261109T000000Z/dists/resolute/InRelease"
+[[ "$(tail -n 1 "$INDEX_CALLS")" == "https://snapshot.test/ubuntu/20261109T000000Z/dists/resolute/InRelease" ]] || {
+  printf 'ERROR: Signed InRelease metadata was not kept on the pinned snapshot.\n' >&2
+  exit 1
+}
+
 printf 'NEXORA downloader tests passed: transient retries and exact-path snapshot package fallback.\n'
