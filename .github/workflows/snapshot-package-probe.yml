@@ -28,6 +28,9 @@ jobs:
             "pool/main/p/pam/libpam-modules_1.7.0-5ubuntu3_amd64.deb"
             "pool/main/a/adduser/adduser_3.153ubuntu1_all.deb"
             "pool/main/s/systemd/systemd_259.5-0ubuntu3_amd64.deb"
+            "pool/main/libx/libxcrypt/libcrypt1_4.5.1-1_amd64.deb"
+            "pool/main/c/cdebconf/libdebconfclient0_0.280ubuntu1_amd64.deb"
+            "pool/main/l/lvm2/libdevmapper1.02.1_1.02.205-2ubuntu3_amd64.deb"
           )
           {
             echo "## Ubuntu snapshot package URL diagnostics"
