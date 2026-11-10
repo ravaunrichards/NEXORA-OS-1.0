@@ -27,13 +27,15 @@ Status terms:
 
 ## Latest automated evidence
 
-- Latest completed repository validation: [run #81](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42833180108), PASS on commit `f2f81fc900cede181d3f8e9830c984d95d4c0511`. It validated all 24 base packages and required files, syntax-checked every build shell script, parsed the GitHub workflow and issue-form YAML files, and passed the simulated transient-download retry test.
+- Latest completed repository validation: [run #86](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42834354502), PASS on commit `b6e8a9ebaf8539358ddb8206d29621009731e6ff`. It validated all 24 base packages and required files, syntax-checked every build shell script, parsed the GitHub workflow and issue-form YAML files, and passed the simulated transient-download retry test.
 - The governance-pack changes add contributor/security policies, CODEOWNERS, structured issue forms, PR checklist, and main-branch protection instructions.
 - The validation workflow is scoped to project source, build, documentation, and GitHub configuration paths, so unrelated repository activity does not trigger unnecessary validation runs.
 - Latest synthetic BIOS/UEFI/hybrid construction test: [run #13](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818732011), PASS. It confirms BIOS and UEFI El Torito entries, `EFI/BOOT/BOOTX64.EFI`, and MBR EFI partition type `0xEF`.
+- Latest Ubuntu Resolute live-build option probe: [run #3](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42834075721), PASS. It confirms the supported singular `--bootloader syslinux` option and persists the configured BIOS serial-console arguments via `--bootappend-live`; the plural `--bootloaders` form is rejected.
 - The production ISO builder and standalone verifier reject images missing the BIOS/UEFI entries or the hybrid EFI MBR marker.
 - The QEMU/OVMF firmware smoke-test workflow now starts automatically after a successful main-branch ISO build and also retains its manual dispatch path. It covers optical and USB paths under BIOS and UEFI; it has not run because no completed NEXORA ISO artifact is available.
 - Full ISO build [run #27](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818732087), source commit `e2243be239a3b673690545971f16a8855aa1f141`, remains active inside the live-build stage. The job began at 2026-11-10 12:59 UTC; GitHub exposes no live job log while it is running, and no completed ISO artifact is confirmed.
+- Build [run #28](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42834318631), containing the confirmed BIOS serial-console configuration, is queued behind run #27 by the same-ref concurrency guard. It will not run concurrently with or cancel run #27.
 - [Run #25](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42817673502) failed; its result is not being counted as a successful image build.
 - No completed NEXORA ISO, real firmware boot, or installation test has been verified yet.
 
