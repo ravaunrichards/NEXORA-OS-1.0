@@ -24,6 +24,16 @@ Status terms:
 | Recovery | Planned | No recovery environment, rollback workflow, or restore tests. |
 | QA and release | Planned | No passing end-to-end suite, signed release, or release notes. |
 
+## Latest automated evidence
+
+- Latest workflow: Validate NEXORA build foundation, run #3.
+- Result: PASS.
+- Commit: 4cae5aa3b52df00186cc9e820fccfe992d748fe9.
+- The workflow validated manifest syntax/required entries and Bash syntax for the build scripts.
+- It did not run live-build, resolve the full package graph, generate an ISO, or boot-test an image.
+
+Repository currently has one main branch, no pull requests, no issues, and no releases. The main branch is not protected.
+
 ## Current release gate
 
 NEXORA is not a release candidate. Do not distribute it as an installable daily-use OS until all release acceptance tests are documented and passed.
