@@ -8,6 +8,7 @@ on:
       - "build/add-uefi-boot.sh"
       - "build/test-add-uefi-boot.sh"
       - "build/patch-debootstrap-download-retries.sh"
+      - "build/test-download-retry-wrapper.sh"
       - "build/packages/**"
   workflow_dispatch:
 
@@ -74,7 +75,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          sudo env NEXORA_SNAPSHOT="$NEXORA_SNAPSHOT" bash build/build-iso.sh 2>&1 | tee "$RUNNER_TEMP/nexora-build-full.log"
+          sudo env NEXORA_SNAPSHOT="$NEXORA_SNAPSHOT" NEXORA_DOWNLOAD_LOG="$RUNNER_TEMP/nexora-download-fallback.log" bash build/build-iso.sh 2>&1 | tee "$RUNNER_TEMP/nexora-build-full.log"
 
       - name: Upload ISO, checksum, build information and full log
         if: always()
@@ -84,5 +85,6 @@ jobs:
           path: |
             dist/
             ${{ runner.temp }}/nexora-build-full.log
+            ${{ runner.temp }}/nexora-download-fallback.log
           if-no-files-found: warn
           retention-days: 30
