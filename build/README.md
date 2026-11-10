@@ -41,7 +41,7 @@ Ubuntu 26.04 splits the former monolithic Linux firmware set into supported pack
 
 The ISO verification checks the ISO filesystem, BIOS and UEFI El Torito entries, and the hybrid USB MBR EFI partition marker (type 0xEF). The synthetic-image test also checks that the EFI image contains `EFI/BOOT/BOOTX64.EFI`. These are structural checks, not substitutes for booting the finished NEXORA ISO in QEMU with UEFI and BIOS firmware and on physical AMD64 hardware.
 
-After a successful main-branch ISO build, the **NEXORA BIOS and UEFI firmware boot smoke tests** workflow starts automatically and downloads that build's artifact. A manual workflow-dispatch option remains available; for that path, supply the ISO build run ID and exact artifact name. The workflow uses QEMU to test legacy BIOS and OVMF UEFI from both optical ISO media and hybrid USB media, then checks serial logs for a reached live userspace target. It is an automated VM smoke test, not a substitute for physical-device testing.
+After any successful ISO build on a branch in this repository, the **NEXORA BIOS and UEFI firmware boot smoke tests** workflow starts automatically and downloads that build's artifact. Builds originating from other repositories are excluded. A manual workflow-dispatch option remains available; for that path, supply the ISO build run ID and exact artifact name. The workflow uses QEMU to test legacy BIOS and OVMF UEFI from both optical ISO media and hybrid USB media, then checks serial logs for a reached live userspace target. It is an automated VM smoke test, not a substitute for physical-device testing.
 
 ## Resource requirements
 
