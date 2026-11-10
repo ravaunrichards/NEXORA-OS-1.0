@@ -128,6 +128,11 @@ grep -qi "BIOS" "$WORK_DIR/eltorito-report.txt" || \
 grep -qi "UEFI" "$WORK_DIR/eltorito-report.txt" || grep -Eqi '0x0*ef|platform.*ef' "$WORK_DIR/eltorito-report.txt" || \
   fail "Generated image has no detectable UEFI boot entry. Workspace retained at $WORK_DIR."
 
+xorriso -indev "$CANDIDATE" -report_system_area plain > "$WORK_DIR/system-area-report.txt" 2>&1 || \
+  fail "xorriso could not inspect the hybrid system area. Workspace retained at $WORK_DIR."
+grep -Eqi 'MBR partition[[:space:]]*:[[:space:]]*[0-9]+[[:space:]]+0x[0-9a-f]+[[:space:]]+0xef' "$WORK_DIR/system-area-report.txt" || \
+  fail "Generated image has no EFI-marked MBR partition (type 0xEF). Workspace retained at $WORK_DIR."
+
 install -m 0644 "$CANDIDATE" "$ISO_PATH"
 (
   cd "$OUTPUT_DIR"
@@ -140,6 +145,7 @@ cp "$WORK_DIR/build-inputs.txt" "$INFO_PATH"
   printf 'SHA-256: '
   sha256sum "$ISO_PATH" | awk '{print $1}'
   printf 'El Torito report: %s\n' "$WORK_DIR/eltorito-report.txt"
+  printf 'Hybrid system area report: %s\n' "$WORK_DIR/system-area-report.txt"
   printf 'Config log: %s\n' "$WORK_DIR/config.log"
   printf 'Build log: %s\n' "$WORK_DIR/build.log"
 } >> "$INFO_PATH"
