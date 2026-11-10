@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 022
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+
+fail() {
+  printf 'ERROR: %s\n' "$*" >&2
+  exit 1
+}
+
+SNAPSHOT="${NEXORA_SNAPSHOT:-}"
+[[ "$SNAPSHOT" =~ ^[0-9]{8}T[0-9]{6}Z$ ]] || fail "Set NEXORA_SNAPSHOT in YYYYMMDDTHHMMSSZ format."
+
+[[ "$EUID" -eq 0 ]] || fail "Run with sudo: sudo env NEXORA_SNAPSHOT=$SNAPSHOT bash build/build-iso.sh"
+
+source /etc/os-release
+[[ "${ID:-}" == "ubuntu" && "${VERSION_ID:-}" == "26.04" && "${VERSION_CODENAME:-}" == "resolute" ]] ||   fail "Build host must be Ubuntu 26.04 LTS (resolute). Detected: ${PRETTY_NAME:-unknown}."
+
+HOST_ARCH="$(dpkg --print-architecture)"
+[[ "$HOST_ARCH" == "amd64" ]] || fail "Build host must be amd64; detected: $HOST_ARCH."
+
+for command_name in lb debootstrap mksquashfs xorriso grub-mkrescue sha256sum df awk find; do
+  command -v "$command_name" >/dev/null 2>&1 || fail "Missing build tool: $command_name. Install the packages listed in build/README.md."
+done
+
+bash "$ROOT_DIR/build/validate-config.sh"
+
+MEM_KB="$(awk '/MemTotal:/ {print $2}' /proc/meminfo)"
+(( MEM_KB >= 8 * 1024 * 1024 )) || fail "At least 8 GiB RAM is required."
+FREE_KB="$(df -Pk "$ROOT_DIR" | awk 'NR == 2 {print $4}')"
+(( FREE_KB >= 25 * 1024 * 1024 )) || fail "At least 25 GiB free disk space is required on the repository filesystem."
+
+OUTPUT_DIR="${NEXORA_OUTPUT_DIR:-$ROOT_DIR/dist}"
+mkdir -p "$OUTPUT_DIR"
+OUTPUT_DIR="$(cd -- "$OUTPUT_DIR" && pwd)"
+
+ISO_NAME="NEXORA-26.04-amd64-$SNAPSHOT.iso"
+ISO_PATH="$OUTPUT_DIR/$ISO_NAME"
+CHECKSUM_PATH="$ISO_PATH.sha256"
+INFO_PATH="$OUTPUT_DIR/$ISO_NAME.build-info.txt"
+
+for target in "$ISO_PATH" "$CHECKSUM_PATH" "$INFO_PATH"; do
+  [[ ! -e "$target" ]] || fail "Refusing to overwrite existing output: $target"
+done
+
+WORK_DIR="$(mktemp -d "${TMPDIR:-/var/tmp}/nexora-os-build.XXXXXX")"
+printf 'Build workspace: %s\n' "$WORK_DIR"
+printf 'Build log: %s\n' "$WORK_DIR/build.log"
+
+SNAPSHOT_MIRROR="https://snapshot.ubuntu.com/ubuntu/$SNAPSHOT/"
+cd "$WORK_DIR"
+mkdir -p config/package-lists
+cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
+
+{
+  printf 'NEXORA OS engineering ISO build\n'
+  printf 'Release: Ubuntu 26.04 (resolute)\n'
+  printf 'Architecture: amd64\n'
+  printf 'Ubuntu snapshot: %s\n' "$SNAPSHOT"
+  printf 'Repository commit: %s\n' "$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf unknown)"
+  printf 'Started UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} > "$WORK_DIR/build-inputs.txt"
+
+lb config   --mode ubuntu   --distribution resolute   --architectures amd64   --binary-images iso-hybrid   --bootloader grub-pc   --system live   --archive-areas "main restricted universe multiverse"   --mirror-bootstrap "$SNAPSHOT_MIRROR"   --mirror-chroot "$SNAPSHOT_MIRROR"   --mirror-chroot-security "$SNAPSHOT_MIRROR"   --mirror-binary "https://archive.ubuntu.com/ubuntu/"   --mirror-binary-security "https://security.ubuntu.com/ubuntu/"   --checksums sha256   --apt-recommends true   --apt-secure true   --security true   --updates true   --firmware-binary true   --firmware-chroot true   --debian-installer false   --linux-flavours generic   --image-name "nexora-26.04-amd64"   --iso-volume "NEXORA_2604"
+
+printf 'Starting live-build. Ubuntu mode is an experimental derivative path; any build failure must be investigated rather than bypassed.\n'
+set -o pipefail
+lb build 2>&1 | tee "$WORK_DIR/build.log"
+
+mapfile -t ISO_CANDIDATES < <(find "$WORK_DIR" -type f -name '*.iso' -print | sort)
+(( ${#ISO_CANDIDATES[@]} == 1 )) || fail "Expected exactly one generated ISO; found ${#ISO_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
+CANDIDATE="${ISO_CANDIDATES[0]}"
+
+xorriso -indev "$CANDIDATE" -report_el_torito plain > "$WORK_DIR/eltorito-report.txt" 2>&1 ||   fail "xorriso could not inspect the generated image. Workspace retained at $WORK_DIR."
+grep -qi "El Torito" "$WORK_DIR/eltorito-report.txt" ||   fail "Generated image has no detectable El Torito boot catalog. Workspace retained at $WORK_DIR."
+
+install -m 0644 "$CANDIDATE" "$ISO_PATH"
+(
+  cd "$OUTPUT_DIR"
+  sha256sum "$ISO_NAME" > "$ISO_NAME.sha256"
+)
+cp "$WORK_DIR/build-inputs.txt" "$INFO_PATH"
+{
+  printf 'Completed UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  printf 'ISO: %s\n' "$ISO_PATH"
+  printf 'SHA-256: '
+  sha256sum "$ISO_PATH" | awk '{print $1}'
+  printf 'El Torito report: %s\n' "$WORK_DIR/eltorito-report.txt"
+  printf 'Build log: %s\n' "$WORK_DIR/build.log"
+} >> "$INFO_PATH"
+
+printf '\nBuild produced an engineering ISO: %s\n' "$ISO_PATH"
+printf 'Checksum: %s\n' "$CHECKSUM_PATH"
+printf 'Build workspace retained for inspection: %s\n' "$WORK_DIR"
+printf 'IMPORTANT: Boot-test in both UEFI and BIOS virtual machines before treating this image as usable. No disk installer is included.\n'
