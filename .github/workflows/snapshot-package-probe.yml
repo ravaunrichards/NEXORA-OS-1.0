@@ -62,6 +62,12 @@ jobs:
               echo "### $file"
               grep -nE 'PATH=|wget|download_file|download.*\(' "$file" | head -180 || true
             done
+            echo
+            echo "### debootstrap package verification code (download + checksum)"
+            sed -n '430,485p' /usr/share/debootstrap/functions
+            echo
+            echo "### debootstrap package download/validation loop"
+            sed -n '835,880p' /usr/share/debootstrap/functions
           } | tee "$RUNNER_TEMP/debootstrap-download-implementation.txt"
       - name: Upload diagnostic results
         if: always()
