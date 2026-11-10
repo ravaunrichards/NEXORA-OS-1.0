@@ -127,6 +127,76 @@ jobs:
             exit 1
           fi
 
+      - name: Run legacy BIOS USB boot test
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          log="$RUNNER_TEMP/nexora-bios-usb-boot.log"
+          set +e
+          timeout --signal=TERM --kill-after=20s 900s \
+            qemu-system-x86_64 \
+              -machine pc,accel=tcg -cpu max -m 8192 -smp 2 \
+              -usb \
+              -drive "if=none,id=nexorausb,format=raw,file=$NEXORA_ISO" \
+              -device usb-storage,drive=nexorausb,bootindex=1 \
+              -display none -serial "file:$log" -monitor none \
+              -no-reboot -nic none -boot menu=on
+          qemu_status=$?
+          set -e
+          echo "QEMU BIOS USB exit status: $qemu_status"
+          if grep -Eiq 'Reached target.*(graphical\\.target|Graphical Interface|multi-user\\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
+            echo "BIOS USB boot reached the live userspace target."
+          else
+            echo "::error::BIOS USB boot did not reach a confirmed live userspace target."
+            tail -n 160 "$log" || true
+            exit 1
+          fi
+
+      - name: Run UEFI USB boot test with OVMF
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mapfile -t code_candidates < <(find /usr/share/OVMF -maxdepth 1 -type f -name 'OVMF_CODE*.fd' ! -iname '*secboot*' -print | sort)
+          [[ "${#code_candidates[@]}" -gt 0 ]] || {
+            echo "::error::No non-Secure-Boot OVMF_CODE firmware image was installed."
+            exit 1
+          }
+
+          OVMF_CODE="${code_candidates[0]}"
+          code_name="$(basename "$OVMF_CODE")"
+          vars_name="${code_name/OVMF_CODE/OVMF_VARS}"
+          OVMF_VARS="$(dirname "$OVMF_CODE")/$vars_name"
+          [[ -s "$OVMF_VARS" ]] || {
+            echo "::error::Matching OVMF variable template not found: $OVMF_VARS"
+            exit 1
+          }
+
+          vars_copy="$RUNNER_TEMP/OVMF_VARS-USB-test.fd"
+          cp "$OVMF_VARS" "$vars_copy"
+          log="$RUNNER_TEMP/nexora-uefi-usb-boot.log"
+
+          set +e
+          timeout --signal=TERM --kill-after=20s 900s \
+            qemu-system-x86_64 \
+              -machine q35,accel=tcg -cpu max -m 8192 -smp 2 \
+              -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" \
+              -drive "if=pflash,format=raw,file=$vars_copy" \
+              -device qemu-xhci,id=nexora-xhci \
+              -drive "if=none,id=nexorausb,format=raw,file=$NEXORA_ISO" \
+              -device usb-storage,drive=nexorausb,bus=nexora-xhci.0,bootindex=1 \
+              -display none -serial "file:$log" -monitor none \
+              -no-reboot -nic none -boot menu=on
+          qemu_status=$?
+          set -e
+          echo "QEMU UEFI USB exit status: $qemu_status"
+          if grep -Eiq 'Reached target.*(graphical\\.target|Graphical Interface|multi-user\\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
+            echo "UEFI USB boot reached the live userspace target."
+          else
+            echo "::error::UEFI USB boot did not reach a confirmed live userspace target."
+            tail -n 160 "$log" || true
+            exit 1
+          fi
+
       - name: Upload firmware boot logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -135,5 +205,7 @@ jobs:
           path: |
             ${{ runner.temp }}/nexora-bios-boot.log
             ${{ runner.temp }}/nexora-uefi-boot.log
+            ${{ runner.temp }}/nexora-bios-usb-boot.log
+            ${{ runner.temp }}/nexora-uefi-usb-boot.log
           if-no-files-found: warn
           retention-days: 30
