@@ -26,7 +26,7 @@ for command_name in xorriso grub-mkstandalone mkfs.vfat mmd mcopy dd find grep; 
 done
 
 WORK_DIR="$(mktemp -d "${TMPDIR:-/var/tmp}/nexora-uefi.XXXXXX")"
-trap 'rm -rf -- "$WORK_DIR"' EXIT
+# Keep the private build workspace for diagnosis; CI runners are ephemeral.
 ISO_ROOT="$WORK_DIR/iso-root"
 mkdir -p "$ISO_ROOT"
 
@@ -109,7 +109,7 @@ xorriso \
   -outdev "$OUTPUT_ISO" \
   -mkdir /boot \
   -map "$ESP_IMAGE" /boot/nexora-efi.img \
-  -boot_image any replay \
+  -boot_image any keep \
   -boot_image any efi_path=/boot/nexora-efi.img \
   -commit -end > "$WORK_DIR/xorriso-remaster.log" 2>&1 || \
   fail "xorriso could not add the UEFI El Torito boot image."
@@ -118,7 +118,7 @@ xorriso \
 FINAL_REPORT="$WORK_DIR/final-eltorito.txt"
 xorriso -indev "$OUTPUT_ISO" -report_el_torito plain > "$FINAL_REPORT" 2>&1 || \
   fail "Could not inspect the remastered ISO boot catalog."
-grep -qi "BIOS" "$FINAL_REPORT" || fail "Remastered ISO lost its BIOS boot entry."
+grep -qi "BIOS" "$FINAL_REPORT" || { cat "$FINAL_REPORT" >&2; fail "Remastered ISO lost its BIOS boot entry."; }
 grep -qi "UEFI" "$FINAL_REPORT" || grep -Eqi '0x0*ef|platform.*ef' "$FINAL_REPORT" || \
   fail "Remastered ISO has no detected UEFI El Torito entry."
 
