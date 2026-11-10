@@ -1,0 +1,3 @@
+# The repository owner is the default reviewer for project changes.
+# Enforce code-owner review through GitHub branch protection when enabled.
+* @ravaunrichards
