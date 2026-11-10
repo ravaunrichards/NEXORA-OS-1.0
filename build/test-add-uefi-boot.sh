@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/nexora-uefi-test.XXXXXX")"
+trap 'rm -rf -- "$TMP_ROOT"' EXIT
+
+for command_name in xorriso mcopy mdir; do
+  command -v "$command_name" >/dev/null 2>&1 || {
+    printf 'ERROR: Test dependency missing: %s\n' "$command_name" >&2
+    exit 1
+  }
+done
+
+ISOLINUX_SOURCE="/usr/share/live/build/bootloaders/isolinux/isolinux.bin"
+[[ -s "$ISOLINUX_SOURCE" ]] || {
+  printf 'ERROR: Ubuntu live-build isolinux boot image not found: %s\n' "$ISOLINUX_SOURCE" >&2
+  exit 1
+}
+
+SOURCE_ROOT="$TMP_ROOT/source"
+mkdir -p "$SOURCE_ROOT/isolinux" "$SOURCE_ROOT/casper"
+cp "$ISOLINUX_SOURCE" "$SOURCE_ROOT/isolinux/isolinux.bin"
+printf 'synthetic-kernel-for-structure-test\n' > "$SOURCE_ROOT/casper/vmlinuz"
+printf 'synthetic-initrd-for-structure-test\n' > "$SOURCE_ROOT/casper/initrd"
+
+BASE_ISO="$TMP_ROOT/base-bios.iso"
+xorriso -as mkisofs \
+  -o "$BASE_ISO" \
+  -r -J -V NEXORA_TEST \
+  -b isolinux/isolinux.bin \
+  -c isolinux/boot.cat \
+  -no-emul-boot -boot-load-size 4 -boot-info-table \
+  "$SOURCE_ROOT" > "$TMP_ROOT/mkisofs.log" 2>&1
+
+DUAL_ISO="$TMP_ROOT/nexora-dualboot-test.iso"
+bash "$ROOT_DIR/build/add-uefi-boot.sh" "$BASE_ISO" "$DUAL_ISO" > "$TMP_ROOT/add-uefi.log"
+
+REPORT="$TMP_ROOT/eltorito.txt"
+xorriso -indev "$DUAL_ISO" -report_el_torito plain > "$REPORT" 2>&1
+grep -qi "BIOS" "$REPORT" || {
+  printf 'ERROR: Synthetic image lost its BIOS boot entry.\n' >&2
+  exit 1
+}
+grep -qi "UEFI" "$REPORT" || grep -Eqi '0x0*ef|platform.*ef' "$REPORT" || {
+  printf 'ERROR: Synthetic image did not gain a UEFI boot entry.\n' >&2
+  cat "$REPORT" >&2
+  exit 1
+}
+
+EXTRACTED_ESP="$TMP_ROOT/esp.img"
+xorriso -osirrox on -indev "$DUAL_ISO" -extract /boot/nexora-efi.img "$EXTRACTED_ESP" > "$TMP_ROOT/extract-esp.log" 2>&1
+mdir -i "$EXTRACTED_ESP" ::/EFI/BOOT > "$TMP_ROOT/esp-listing.txt"
+mcopy -i "$EXTRACTED_ESP" ::/EFI/BOOT/BOOTX64.EFI "$TMP_ROOT/BOOTX64.EFI"
+[[ -s "$TMP_ROOT/BOOTX64.EFI" ]] || {
+  printf 'ERROR: UEFI fallback loader is missing from the EFI system image.\n' >&2
+  exit 1
+}
+
+printf 'NEXORA dual-boot image construction test passed (BIOS + UEFI El Torito entries).\n'
+cat "$REPORT"
