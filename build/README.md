@@ -11,7 +11,7 @@ Use a native Ubuntu 26.04 LTS AMD64 machine. Cross-architecture builds are outsi
 Install the build tools:
 
     sudo apt-get update
-    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux
+    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux isolinux
 
 ## Build
 
