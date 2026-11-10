@@ -51,7 +51,7 @@ jobs:
             exit 1
           }
 
-          for module in welcome locale keyboard partition users summary mount unpackfs machineid fstab localecfg displaymanager networkcfg hwclock initramfscfg initramfs grubcfg bootloader packages umount finished; do
+          for module in welcome locale keyboard partition users summary mount unpackfs machineid fstab localecfg displaymanager networkcfg hwclock initramfscfg initramfs grubcfg bootloader packages shellprocess umount finished; do
             [[ -s "$module_dir/$module/module.desc" ]] || {
               echo "::error::Required Calamares module is missing: $module"
               exit 1
