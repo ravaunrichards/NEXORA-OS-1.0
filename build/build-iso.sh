@@ -88,7 +88,7 @@ lb config \
   --distribution resolute \
   --architectures amd64 \
   --binary-images iso-hybrid \
-  --bootloader grub-pc \
+  --bootloader syslinux \
   --system live \
   --archive-areas "main restricted universe multiverse" \
   --mirror-bootstrap "$SNAPSHOT_MIRROR" \
@@ -100,12 +100,12 @@ lb config \
   --apt-recommends true \
   --apt-secure true \
   --security true \
-  --updates true \
   --firmware-binary true \
   --firmware-chroot true \
   --debian-installer false \
   --linux-flavours generic \
-  --image-name "nexora-26.04-amd64" \
+  --iso-application "NEXORA OS 26.04" \
+  --iso-publisher "NEXORA OS Project" \
   --iso-volume "NEXORA_2604" 2>&1 | tee "$WORK_DIR/config.log"
 
 printf 'Starting live-build. Ubuntu mode is an experimental derivative path; any build failure must be investigated rather than bypassed.\n'
