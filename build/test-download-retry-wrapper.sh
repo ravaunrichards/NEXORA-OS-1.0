@@ -77,8 +77,8 @@ INDEX_LOG="$TMP_ROOT/index.log"
 cat > "$INDEX_WGET" <<'INDEX'
 #!/usr/bin/env bash
 set -Eeuo pipefail
-url="\${!#}"
-printf '%s\n' "$url" >> "\${NEXORA_TEST_INDEX_CALLS:?}"
+url="${!#}"
+printf '%s\n' "$url" >> "${NEXORA_TEST_INDEX_CALLS:?}"
 case "$url" in
   https://snapshot.test/ubuntu/20261109T000000Z/dists/resolute/main/binary-amd64/Packages.xz) exit 8 ;;
   https://archive.test/ubuntu/dists/resolute/main/binary-amd64/Packages.xz) exit 0 ;;
