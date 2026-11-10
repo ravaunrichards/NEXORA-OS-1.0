@@ -85,12 +85,14 @@ cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexor
   printf 'Started UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$WORK_DIR/build-inputs.txt"
 
+# Send live-system diagnostics to the QEMU serial console while retaining VGA output.
 lb config \
   --mode ubuntu \
   --distribution resolute \
   --architectures amd64 \
   --binary-images iso-hybrid \
   --bootloader syslinux \
+  --bootappend-live "console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console" \
   --system live \
   --archive-areas "main restricted universe multiverse" \
   --mirror-bootstrap "$SNAPSHOT_MIRROR" \
