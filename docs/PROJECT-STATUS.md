@@ -26,13 +26,21 @@ Status terms:
 
 ## Latest automated evidence
 
-- Latest workflow: Validate NEXORA build foundation, run #5.
-- Result: PASS (job: `validate`, completed successfully).
-- Commit: `08db1ed62734a628c2bc728a53f05f5d0a38ca13`.
-- Run: [GitHub Actions run #5](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42771054481).
-- The workflow validated the package manifest/project files and Bash syntax for the build scripts.
-- It did not run live-build, resolve the full package graph, generate an ISO, or boot-test an image.
-- Earlier run #3 evidence is superseded by this latest successful run.
+- Latest completed validation: Validate NEXORA build foundation, run #20.
+- Result: PASS (manifest/config validation, retry-wrapper behavioral test, and Bash syntax checks).
+- Commit: `9e69924c26ef93b5a281d7ff9fc283f4b3e7789b`.
+- Run: [GitHub Actions run #20](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42777382144).
+- The retry test simulated a transient wget failure and confirmed recovery on the next attempt.
+- The test confirms the system wget and installed debootstrap files are not modified.
+
+## ISO build history and current checkpoint
+
+- Build runs #1 and #2 stopped at pre-build validation/configuration errors; those were corrected.
+- Build run #3 reached debootstrap but failed while downloading several packages. The signed snapshot indexes were retrieved; the failed package URLs later returned HTTP 200 in a separate read-only diagnostic.
+- A bounded, four-attempt wget retry wrapper now runs only inside the temporary build workspace. It uses increasing short delays, preserves package checksum/signature checks, and does not modify system tools.
+- The Ubuntu 26.04 AMD64 runner passed the host gate (15.61 GiB RAM and 88 GiB available disk at probe time).
+- Engineering ISO build run #9 is using the retry-enabled builder. Run #10 is using the latest commit with the narrower workflow triggers and concurrency guard.
+- No completed ISO artifact, successful UEFI/BIOS boot, or installation test has been verified yet.
 
 Repository currently has one main branch, no pull requests, no issues, and no releases. The main branch is not protected.
 
