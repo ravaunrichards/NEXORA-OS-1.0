@@ -1,0 +1,45 @@
+# NEXORA OS
+
+NEXORA OS is an independent desktop operating-system project based on **Ubuntu 26.04 LTS (Resolute Raccoon)**. The first hardware target is **AMD64 / x86-64 desktop and laptop PCs**.
+
+The product direction is one installation with two selectable desktop experiences:
+
+- **NEXORA Classic** — a familiar, straightforward desktop.
+- **NEXORA Flow** — a modern workspace-oriented desktop.
+
+The intended audiences are home, professional, gaming, creator, and business users.
+
+## Current engineering status
+
+**This repository is at the initial build-foundation stage. It is not a finished operating system and no production installer or release ISO is available.**
+
+The first engineering image is a bootable Ubuntu-based live-environment experiment with a KDE Plasma foundation. It is not an installer. The installer, NEXORA Classic, NEXORA Flow, custom applications, recovery environment, hardware qualification, and release signing still require implementation and tests.
+
+Never represent an engineering image as a complete or supported OS release.
+
+## Build foundation
+
+See [Build instructions](build/README.md), [Build architecture](docs/BUILD-ARCHITECTURE.md), and [verified project status](docs/PROJECT-STATUS.md).
+
+A dated Ubuntu archive snapshot is required for every build. On an Ubuntu 26.04 AMD64 build host, install live-build and its tools, then run:
+
+    sudo apt-get update
+    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin
+    sudo env NEXORA_SNAPSHOT=20261110T000000Z bash build/build-iso.sh
+
+The timestamp is an example archive snapshot, not proof that an image has been built. ISO files and SHA-256 checksums are written to dist/. Existing output files are never overwritten.
+
+## Project rules
+
+- Make changes incrementally; preserve working files and configuration.
+- Keep Classic and Flow as distinct experiences sharing one OS installation.
+- No static mockups or placeholder screens may be reported as implemented features.
+- Never mark a milestone complete without inspectable code and relevant test evidence.
+- Keep build inputs, package lists, and release artifacts traceable to commits.
+- Do not publish a release until installation, boot, security, recovery, and hardware acceptance tests pass.
+
+## Project documentation
+
+- [Current milestone status](docs/PROJECT-STATUS.md)
+- [Build architecture](docs/BUILD-ARCHITECTURE.md)
+- [Build and verification instructions](build/README.md)
