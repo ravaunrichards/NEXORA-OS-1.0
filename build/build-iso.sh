@@ -71,7 +71,7 @@ printf 'Build log: %s\n' "$WORK_DIR/build.log"
 RETRY_BIN="$WORK_DIR/retry-bin"
 bash "$ROOT_DIR/build/patch-debootstrap-download-retries.sh" "$RETRY_BIN"
 
-SNAPSHOT_MIRROR="https://snapshot.ubuntu.com/ubuntu/$SNAPSHOT/"
+SNAPSHOT_MIRROR="https://snapshot.ubuntu.com/ubuntu/$SNAPSHOT"
 cd "$WORK_DIR"
 mkdir -p config/package-lists
 cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
@@ -96,8 +96,8 @@ lb config \
   --mirror-bootstrap "$SNAPSHOT_MIRROR" \
   --mirror-chroot "$SNAPSHOT_MIRROR" \
   --mirror-chroot-security "$SNAPSHOT_MIRROR" \
-  --mirror-binary "https://archive.ubuntu.com/ubuntu/" \
-  --mirror-binary-security "https://security.ubuntu.com/ubuntu/" \
+  --mirror-binary "https://archive.ubuntu.com/ubuntu" \
+  --mirror-binary-security "https://security.ubuntu.com/ubuntu" \
   --checksums sha256 \
   --apt-recommends true \
   --apt-secure true \
