@@ -78,23 +78,14 @@ jobs:
         run: |
           set -Eeuo pipefail
           log="$RUNNER_TEMP/nexora-bios-boot.log"
-          set +e
-          timeout --signal=TERM --kill-after=20s 900s \
-            qemu-system-x86_64 \
+          bash build/run-qemu-live-boot.sh \
+            "$log" 900 \
+            'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' \
+            -- qemu-system-x86_64 \
               -machine pc,accel=tcg -cpu max -m 8192 -smp 2 \
               -display none -serial "file:$log" -monitor none \
               -no-reboot -nic none \
               -cdrom "$NEXORA_ISO" -boot order=d
-          qemu_status=$?
-          set -e
-          echo "QEMU BIOS exit status: $qemu_status"
-          if grep -Eiq 'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
-            echo "BIOS firmware boot reached the live userspace target."
-          else
-            echo "::error::BIOS firmware boot did not reach a confirmed live userspace target."
-            tail -n 160 "$log" || true
-            exit 1
-          fi
 
       - name: Run UEFI live-system boot test with OVMF
         shell: bash
@@ -118,51 +109,32 @@ jobs:
           vars_copy="$RUNNER_TEMP/OVMF_VARS-test.fd"
           cp "$OVMF_VARS" "$vars_copy"
           log="$RUNNER_TEMP/nexora-uefi-boot.log"
-
-          set +e
-          timeout --signal=TERM --kill-after=20s 900s \
-            qemu-system-x86_64 \
+          bash build/run-qemu-live-boot.sh \
+            "$log" 900 \
+            'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' \
+            -- qemu-system-x86_64 \
               -machine q35,accel=tcg -cpu max -m 8192 -smp 2 \
               -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" \
               -drive "if=pflash,format=raw,file=$vars_copy" \
               -display none -serial "file:$log" -monitor none \
               -no-reboot -nic none \
               -cdrom "$NEXORA_ISO" -boot order=d
-          qemu_status=$?
-          set -e
-          echo "QEMU UEFI exit status: $qemu_status"
-          if grep -Eiq 'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
-            echo "UEFI firmware boot reached the live userspace target."
-          else
-            echo "::error::UEFI firmware boot did not reach a confirmed live userspace target."
-            tail -n 160 "$log" || true
-            exit 1
-          fi
 
       - name: Run legacy BIOS USB boot test
         shell: bash
         run: |
           set -Eeuo pipefail
           log="$RUNNER_TEMP/nexora-bios-usb-boot.log"
-          set +e
-          timeout --signal=TERM --kill-after=20s 900s \
-            qemu-system-x86_64 \
+          bash build/run-qemu-live-boot.sh \
+            "$log" 900 \
+            'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' \
+            -- qemu-system-x86_64 \
               -machine pc,accel=tcg -cpu max -m 8192 -smp 2 \
               -usb \
               -drive "if=none,id=nexorausb,format=raw,file=$NEXORA_ISO" \
               -device usb-storage,drive=nexorausb,bootindex=1 \
               -display none -serial "file:$log" -monitor none \
               -no-reboot -nic none -boot menu=on
-          qemu_status=$?
-          set -e
-          echo "QEMU BIOS USB exit status: $qemu_status"
-          if grep -Eiq 'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
-            echo "BIOS USB boot reached the live userspace target."
-          else
-            echo "::error::BIOS USB boot did not reach a confirmed live userspace target."
-            tail -n 160 "$log" || true
-            exit 1
-          fi
 
       - name: Run UEFI USB boot test with OVMF
         shell: bash
@@ -186,10 +158,10 @@ jobs:
           vars_copy="$RUNNER_TEMP/OVMF_VARS-USB-test.fd"
           cp "$OVMF_VARS" "$vars_copy"
           log="$RUNNER_TEMP/nexora-uefi-usb-boot.log"
-
-          set +e
-          timeout --signal=TERM --kill-after=20s 900s \
-            qemu-system-x86_64 \
+          bash build/run-qemu-live-boot.sh \
+            "$log" 900 \
+            'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' \
+            -- qemu-system-x86_64 \
               -machine q35,accel=tcg -cpu max -m 8192 -smp 2 \
               -drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" \
               -drive "if=pflash,format=raw,file=$vars_copy" \
@@ -198,16 +170,6 @@ jobs:
               -device usb-storage,drive=nexorausb,bus=nexora-xhci.0,bootindex=1 \
               -display none -serial "file:$log" -monitor none \
               -no-reboot -nic none -boot menu=on
-          qemu_status=$?
-          set -e
-          echo "QEMU UEFI USB exit status: $qemu_status"
-          if grep -Eiq 'Reached target.*(graphical\.target|Graphical Interface|multi-user\.target|Multi-User System)|Started.*(SDDM|display manager)' "$log"; then
-            echo "UEFI USB boot reached the live userspace target."
-          else
-            echo "::error::UEFI USB boot did not reach a confirmed live userspace target."
-            tail -n 160 "$log" || true
-            exit 1
-          fi
 
       - name: Upload firmware boot logs
         if: always()
