@@ -107,7 +107,6 @@ mdir -i "$ESP_IMAGE" ::/EFI/BOOT > "$WORK_DIR/esp-files.txt" 2>&1
 xorriso \
   -indev "$INPUT_ISO" \
   -outdev "$OUTPUT_ISO" \
-  -mkdir /boot \
   -map "$ESP_IMAGE" /boot/nexora-efi.img \
   -boot_image any replay \
   -boot_image any next \
