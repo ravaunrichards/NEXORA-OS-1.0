@@ -27,7 +27,7 @@ Status terms:
 
 ## Latest automated evidence
 
-- Latest completed repository validation: [run #77](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42823446945), PASS on commit `ce43f6486fb1b38d214b2d804cc7ab1c602f61b2`. It validated all 24 base packages and required files, syntax-checked every build shell script, parsed all 9 GitHub workflow and issue-form YAML files, and passed the simulated transient-download retry test.
+- Latest completed repository validation before this status update: [run #79](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42825449890), PASS on commit `2537111b72a6720b3ea0c8e046bc3d2fb7460409`. It validated all 24 base packages and required files, syntax-checked every build shell script, parsed all 9 GitHub workflow and issue-form YAML files, and passed the simulated transient-download retry test.
 - The governance-pack changes add contributor/security policies, CODEOWNERS, structured issue forms, PR checklist, and main-branch protection instructions.
 - The validation workflow is scoped to project source, build, documentation, and GitHub configuration paths, so unrelated repository activity does not trigger unnecessary validation runs.
 - Latest synthetic BIOS/UEFI/hybrid construction test: [run #13](https://github.com/ravaunrichards/NEXORA-OS-1.0/actions/runs/42818732011), PASS. It confirms BIOS and UEFI El Torito entries, `EFI/BOOT/BOOTX64.EFI`, and MBR EFI partition type `0xEF`.
