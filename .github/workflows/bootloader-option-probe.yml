@@ -1,36 +1,42 @@
-name: Verify NEXORA BIOS and UEFI bootloader configuration
+name: Verify NEXORA Ubuntu-targeted live-build configuration
 
 on:
   push:
     paths:
       - ".github/workflows/bootloader-option-probe.yml"
+      - "build/build-iso.sh"
+      - "build/test-live-build-compatibility.sh"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  inspect:
+  probe:
     runs-on: ubuntu-26.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Install Ubuntu Resolute live-build and archive keyring
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y live-build=3.0~a57-1ubuntu54 ubuntu-keyring
-          test -s /usr/share/keyrings/ubuntu-archive-keyring.gpg
-          lb --version
-          lb config --help | grep -E -- '--bootloader|--bootstrap-keyring|--initramfs|--syslinux-theme' || true
+      - name: Check out NEXORA source
+        uses: actions/checkout@v4
 
-      - name: Probe Ubuntu-targeted generic live-build boot configuration
+      - name: Install live-build and Ubuntu trust roots
         shell: bash
         run: |
           set -Eeuo pipefail
-          probe_dir="$RUNNER_TEMP/nexora-lb-probe/ubuntu-resolute"
+          sudo apt-get update
+          sudo apt-get install -y live-build ubuntu-keyring
+          test -s /usr/share/keyrings/ubuntu-archive-keyring.gpg
+          lb --version
+
+      - name: Validate Ubuntu Resolute suite, keyring, Casper and generic boot theme
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          probe_dir="$RUNNER_TEMP/nexora-lb-probe"
           mkdir -p "$probe_dir"
           cd "$probe_dir"
-
           live_args="boot=casper console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console"
+
           lb config \
             --mode debian \
             --distribution resolute \
@@ -43,207 +49,38 @@ jobs:
             --keyring-packages ubuntu-keyring \
             --initramfs casper \
             --initsystem systemd \
+            --memtest none \
             --bootappend-live "$live_args" \
             --archive-areas "main restricted universe multiverse" \
             --parent-archive-areas "main restricted universe multiverse"
 
-          dump="$RUNNER_TEMP/nexora-lb-probe/config-dump.txt"
+          dump="$probe_dir/config"
           lb config --dump > "$dump"
-          cat "$dump"
-          grep -Eq '^LB_MODE="?debian"?
+          grep -Eq '^LB_MODE="?debian"?$' "$dump"
+          grep -Eq '^LB_DISTRIBUTION="?resolute"?$' "$dump"
+          grep -Eq '^LB_PARENT_DISTRIBUTION="?resolute"?$' "$dump"
+          grep -Eq '^LB_INITRAMFS="?casper"?$' "$dump"
+          grep -Eq '^LB_SYSLINUX_THEME="?live-build"?$' "$dump"
+          grep -Fq '/usr/share/keyrings/ubuntu-archive-keyring.gpg' "$dump"
+          grep -Fq 'ubuntu-keyring' "$dump"
+          grep -Fq 'boot=casper' "$dump"
 
-          echo "### Installed live-build bootloader scripts"
-          dpkg -L live-build | grep -E 'lb_binary_(syslinux|grub)|bootloader' || true
-          echo "### EFI references in live-build templates/scripts"
-          grep -R -nEi 'efi|syslinux\\.efi|efi\\.img|efiboot' \
-            /usr/lib/live/build/lb_binary_syslinux \
-            /usr/share/live/build/bootloaders 2>/dev/null | head -160 || true
-          echo "### Relevant package candidates"
-          apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
-
-          {
-            echo "## NEXORA bootloader configuration probe"
-            echo "Ubuntu runner: $(. /etc/os-release && printf '%s' "$PRETTY_NAME")"
-            echo
-            echo "### Singular option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/singular/config" || true
-            echo
-            echo "### Plural option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/plural/config" || true
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload generated live-build configs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: NEXORA-live-build-bootloader-probe
-          path: ${{ runner.temp }}/nexora-lb-probe/
-          if-no-files-found: warn
-          retention-days: 14
- "$dump" || { echo "::error::Generic live-build mode was not recorded."; exit 1; }
-          grep -Eq '^LB_DISTRIBUTION="?resolute"?
-
-          echo "### Installed live-build bootloader scripts"
-          dpkg -L live-build | grep -E 'lb_binary_(syslinux|grub)|bootloader' || true
-          echo "### EFI references in live-build templates/scripts"
-          grep -R -nEi 'efi|syslinux\\.efi|efi\\.img|efiboot' \
-            /usr/lib/live/build/lb_binary_syslinux \
-            /usr/share/live/build/bootloaders 2>/dev/null | head -160 || true
-          echo "### Relevant package candidates"
-          apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
-
-          {
-            echo "## NEXORA bootloader configuration probe"
-            echo "Ubuntu runner: $(. /etc/os-release && printf '%s' "$PRETTY_NAME")"
-            echo
-            echo "### Singular option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/singular/config" || true
-            echo
-            echo "### Plural option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/plural/config" || true
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload generated live-build configs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: NEXORA-live-build-bootloader-probe
-          path: ${{ runner.temp }}/nexora-lb-probe/
-          if-no-files-found: warn
-          retention-days: 14
- "$dump" || { echo "::error::Ubuntu Resolute target suite was not recorded."; exit 1; }
-          grep -Eq '^LB_PARENT_DISTRIBUTION="?resolute"?
-
-          echo "### Installed live-build bootloader scripts"
-          dpkg -L live-build | grep -E 'lb_binary_(syslinux|grub)|bootloader' || true
-          echo "### EFI references in live-build templates/scripts"
-          grep -R -nEi 'efi|syslinux\\.efi|efi\\.img|efiboot' \
-            /usr/lib/live/build/lb_binary_syslinux \
-            /usr/share/live/build/bootloaders 2>/dev/null | head -160 || true
-          echo "### Relevant package candidates"
-          apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
-
-          {
-            echo "## NEXORA bootloader configuration probe"
-            echo "Ubuntu runner: $(. /etc/os-release && printf '%s' "$PRETTY_NAME")"
-            echo
-            echo "### Singular option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/singular/config" || true
-            echo
-            echo "### Plural option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/plural/config" || true
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload generated live-build configs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: NEXORA-live-build-bootloader-probe
-          path: ${{ runner.temp }}/nexora-lb-probe/
-          if-no-files-found: warn
-          retention-days: 14
- "$dump" || { echo "::error::Ubuntu Resolute parent suite was not recorded."; exit 1; }
-          grep -Eq '^LB_INITRAMFS="?casper"?
-
-          echo "### Installed live-build bootloader scripts"
-          dpkg -L live-build | grep -E 'lb_binary_(syslinux|grub)|bootloader' || true
-          echo "### EFI references in live-build templates/scripts"
-          grep -R -nEi 'efi|syslinux\\.efi|efi\\.img|efiboot' \
-            /usr/lib/live/build/lb_binary_syslinux \
-            /usr/share/live/build/bootloaders 2>/dev/null | head -160 || true
-          echo "### Relevant package candidates"
-          apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
-
-          {
-            echo "## NEXORA bootloader configuration probe"
-            echo "Ubuntu runner: $(. /etc/os-release && printf '%s' "$PRETTY_NAME")"
-            echo
-            echo "### Singular option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/singular/config" || true
-            echo
-            echo "### Plural option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/plural/config" || true
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload generated live-build configs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: NEXORA-live-build-bootloader-probe
-          path: ${{ runner.temp }}/nexora-lb-probe/
-          if-no-files-found: warn
-          retention-days: 14
- "$dump" || { echo "::error::Casper initramfs was not recorded."; exit 1; }
-          grep -Eq '^LB_SYSLINUX_THEME="?live-build"?
-
-          echo "### Installed live-build bootloader scripts"
-          dpkg -L live-build | grep -E 'lb_binary_(syslinux|grub)|bootloader' || true
-          echo "### EFI references in live-build templates/scripts"
-          grep -R -nEi 'efi|syslinux\\.efi|efi\\.img|efiboot' \
-            /usr/lib/live/build/lb_binary_syslinux \
-            /usr/share/live/build/bootloaders 2>/dev/null | head -160 || true
-          echo "### Relevant package candidates"
-          apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
-
-          {
-            echo "## NEXORA bootloader configuration probe"
-            echo "Ubuntu runner: $(. /etc/os-release && printf '%s' "$PRETTY_NAME")"
-            echo
-            echo "### Singular option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/singular/config" || true
-            echo
-            echo "### Plural option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/plural/config" || true
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload generated live-build configs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: NEXORA-live-build-bootloader-probe
-          path: ${{ runner.temp }}/nexora-lb-probe/
-          if-no-files-found: warn
-          retention-days: 14
- "$dump" || { echo "::error::Generic Syslinux theme was not recorded."; exit 1; }
-          grep -Fq '/usr/share/keyrings/ubuntu-archive-keyring.gpg' "$dump" || { echo "::error::Ubuntu bootstrap keyring path was not recorded."; exit 1; }
-          grep -Eq '^LB_KEYRING_PACKAGES=.*ubuntu-keyring' "$dump" || { echo "::error::Ubuntu target keyring package was not recorded."; exit 1; }
-          grep -Fq -- "$live_args" "$dump" || { echo "::error::Casper and serial-console live arguments were not recorded."; exit 1; }
-          echo "Ubuntu Resolute / Casper / Ubuntu keyring / generic boot theme configuration passed."
-
-          echo "### Installed live-build bootloader scripts"
-          dpkg -L live-build | grep -E 'lb_binary_(syslinux|grub)|bootloader' || true
-          echo "### Relevant package candidates"
-          apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
           {
             echo "## NEXORA Ubuntu-targeted live-build configuration"
+            echo
+            lb --version
+            echo
             cat "$dump"
+            echo
+            echo "### Available EFI-related package candidates"
+            apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
           } >> "$GITHUB_STEP_SUMMARY"
 
-          echo "### Installed live-build bootloader scripts"
-          dpkg -L live-build | grep -E 'lb_binary_(syslinux|grub)|bootloader' || true
-          echo "### EFI references in live-build templates/scripts"
-          grep -R -nEi 'efi|syslinux\\.efi|efi\\.img|efiboot' \
-            /usr/lib/live/build/lb_binary_syslinux \
-            /usr/share/live/build/bootloaders 2>/dev/null | head -160 || true
-          echo "### Relevant package candidates"
-          apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
-
-          {
-            echo "## NEXORA bootloader configuration probe"
-            echo "Ubuntu runner: $(. /etc/os-release && printf '%s' "$PRETTY_NAME")"
-            echo
-            echo "### Singular option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/singular/config" || true
-            echo
-            echo "### Plural option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/plural/config" || true
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload generated live-build configs
+      - name: Upload generated configuration
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: NEXORA-live-build-bootloader-probe
+          name: NEXORA-ubuntu-live-build-config
           path: ${{ runner.temp }}/nexora-lb-probe/
           if-no-files-found: warn
           retention-days: 14
