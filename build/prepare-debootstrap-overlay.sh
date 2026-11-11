@@ -29,18 +29,18 @@ text = path.read_text(encoding="utf-8")
 # (for example NVSWITCH vs QSWITCH). Locate the complete wgetprogress
 # function and rewrite only shell command invocations whose executable is
 # the literal wget command, preserving all arguments and control flow.
-starts = list(re.finditer(r"(?m)^wgetprogress[ \\t]*\\(\\)[ \\t]*\\{[ \\t]*$", text))
+starts = list(re.finditer(r"(?m)^wgetprogress[ \t]*\(\)[ \t]*\{[ \t]*$", text))
 if len(starts) != 1:
     raise SystemExit(f"ERROR: Expected exactly one debootstrap wgetprogress function; found {len(starts)}.")
 
 start = starts[0].start()
-end_match = re.search(r"(?m)^\\}[ \\t]*$", text[starts[0].end():])
+end_match = re.search(r"(?m)^\}[ \t]*$", text[starts[0].end():])
 if end_match is None:
     raise SystemExit("ERROR: Could not identify the closing brace of wgetprogress.")
 
 end = starts[0].end() + end_match.end()
 block = text[start:end]
-commands = list(re.finditer(r"(?m)^([ \\t]*)wget(?=[ \\t])", block))
+commands = list(re.finditer(r"(?m)^([ \t]*)wget(?=[ \t])", block))
 if len(commands) != 2:
     raise SystemExit(f"ERROR: Expected exactly two wget command paths in wgetprogress; found {len(commands)}.")
 
@@ -52,6 +52,8 @@ path.write_text(text[:start] + block + text[end:], encoding="utf-8")
 PY
 
 sh -n "$OUTPUT_DIR/functions" || fail "Patched debootstrap functions file does not parse."
+grep -Fq '"${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wrapper}"' "$OUTPUT_DIR/functions" && fail "Retry-wrapper placeholder was not expanded."
 grep -Fq '${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wrapper}' "$OUTPUT_DIR/functions" || fail "Private retry-wrapper reference was not installed."
+[[ "$(grep -Fc '${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wrapper}' "$OUTPUT_DIR/functions")" == 2 ]] || fail "Expected both wget paths to use the private retry wrapper."
 printf 'Created private debootstrap overlay: %s\n' "$OUTPUT_DIR"
 printf 'Both HTTPS and ordinary wgetprogress paths call the exact private retry wrapper; system debootstrap files remain unchanged.\n'
