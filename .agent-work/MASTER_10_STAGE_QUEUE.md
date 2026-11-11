@@ -30,11 +30,13 @@ Scope:
 Exit criteria:
 A clean full ISO build succeeds; target identity, ISO structure and checksum verify; all four BIOS/UEFI optical/USB smoke tests reach live userspace for the exact artifact.
 
-Current evidence (2026-11-11):
+Current evidence (2026-11-11, refreshed 05:11 UTC):
 - Repository validation #273 passed on PR #5 head `7bd45ade48df1814021ebfc66339db5a0fbf1aad`.
 - Ubuntu live-build configuration probe #42 passed on the same head.
-- Full build #56 remains reported in progress without accessible live logs; full build #60 is queued behind it.
-- No ISO artifact or real-image boot result has been verified. Therefore Stage 1 remains IN PROGRESS.
+- Full build #56 is still `in_progress`; its only active step is **Build NEXORA engineering ISO**. Host/dependency preflight passed. GitHub has not published downloadable job logs yet (job-log endpoint returned BlobNotFound at 05:11:14 UTC); artifact upload remains pending.
+- Full build #60 is still `pending` behind the branch concurrency group. Its source SHA is `21a71dcef613804887c9a2c624baa47d3240fd67`; do not launch another competing build.
+- The firmware test workflow is configured to auto-run after a successful same-repository ISO build and checks the exact artifact SHA-256 and ISO structure before four QEMU BIOS/UEFI optical/USB boots.
+- No ISO artifact, checksum, or real-image boot result has been verified. Therefore Stage 1 remains IN PROGRESS; Stages 2–10 remain QUEUED.
 
 ### STAGE 2 — Shared core operating system and system integration
 **Status: QUEUED**
