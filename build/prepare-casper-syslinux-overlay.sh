@@ -54,7 +54,8 @@ if len(loader_indexes) != 1:
     )
 loader_index = loader_indexes[0]
 newline = "\n" if lines[loader_index].endswith("\n") else ""
-lines[loader_index] = f'. "{common_library}"{newline}'
+loader_token = "__NEXORA_COMMON_LIBRARY_INCLUDE__"
+lines[loader_index] = f"{loader_token}{newline}"
 source = "".join(lines)
 
 anchor = "# Configuring files\n"
@@ -76,6 +77,9 @@ esac
 source = source.replace(anchor, initramfs_selector + anchor, 1)
 source = source.replace("binary/live/", "binary/${_NEXORA_INITRAMFS_DIR}/")
 source = source.replace("/live/", "/${_NEXORA_INITRAMFS_DIR}/")
+if source.count(loader_token) != 1:
+    raise SystemExit("Could not preserve the common-library include during Casper path rewriting.")
+source = source.replace(loader_token, f'. "{common_library}"', 1)
 
 required = (
     '. "' + str(common_library) + '"',
