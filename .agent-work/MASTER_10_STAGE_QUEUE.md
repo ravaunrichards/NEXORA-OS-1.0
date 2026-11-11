@@ -30,13 +30,13 @@ Scope:
 Exit criteria:
 A clean full ISO build succeeds; target identity, ISO structure and checksum verify; all four BIOS/UEFI optical/USB smoke tests reach live userspace for the exact artifact.
 
-Current evidence (2026-11-11, refreshed 08:54 UTC):
-- Repository validation #316 passed on PR branch commit `fc78fa8882b1725efdfd7a0d10cedf281f4a9bd7`. It includes the Casper/Syslinux overlay regression, common-library bootstrap rewrite, legacy SVG renderer conversion and shell/YAML checks.
-- Ubuntu live-build probe #58 passed on the same commit. It installs the actual Ubuntu Resolute live-build and `librsvg2-bin` packages, executes a real SVG-to-PNG conversion with `rsvg-convert`, stages BIOS boot assets, creates the private overlay and confirms that `lb` dispatches the private override.
+Current evidence (2026-11-11, refreshed 09:02 UTC):
+- Repository validation #317 and #318 passed on the latest PR branch head `e7bb3666fc4613a0dc1b1167a4dde45b5dfe2946`; validation #318 explicitly reports the Casper/Syslinux compatibility overlay regression passed and the original source package file preserved.
+- Ubuntu live-build probe #59 passed on the same latest head. It installs the actual Ubuntu Resolute live-build and `librsvg2-bin` packages, executes a real SVG-to-PNG conversion, checks the overlay's exact chroot and host `rsvg-convert ... -o OUTPUT` commands, stages BIOS boot assets, creates the private overlay and confirms that `lb` dispatches the private override.
 - Probe logs confirmed the installed Ubuntu live-build script still checks `/usr/bin/rsvg` and invokes `rsvg` in both chroot and host branches, while Resolute's `librsvg2-bin` supplies `/usr/bin/rsvg-convert`. The private overlay now rewrites the dependency check and both invocations to `rsvg-convert`, converts the old positional output form to `-o OUTPUT`, and leaves the packaged script untouched. The regression fixture verifies both converted command forms.
 - Full build #61 and #62 failed earlier at the Casper kernel path mismatch. Full build #63 then reached Syslinux but failed with missing legacy `rsvg` (exit 127); it produced no ISO. Build #64 stopped during preflight validation because an intermediate overlay test rejected the package renderer layout; the test was corrected. The redundant intermediate builds #66–#68 were cancelled by GitHub concurrency as later commits superseded them.
 - Full build #65 remains in progress on older commit `3aea17d3d645c7061dbcc3acf2a402aa8412ab55`. Its live job logs are not currently downloadable while running; it predates the latest explicit output-argument correction and is not the acceptance build.
-- Full build #69 is queued on the current PR head `fc78fa8882b1725efdfd7a0d10cedf281f4a9bd7`. It includes the tested legacy renderer rewrite and is the current end-to-end acceptance candidate. Do not start another competing build while #65/#69 occupy the branch's concurrency group.
+- Full build #69 is queued on commit `fc78fa8882b1725efdfd7a0d10cedf281f4a9bd7`, which contains the tested complete renderer conversion and is the current ISO acceptance candidate. A subsequent probe-only commit strengthened the exact output-argument checks without changing ISO builder code. Do not start another competing build while #65/#69 occupy the branch's concurrency group.
 - PR #5 remains open and unmerged. Main remains unchanged at `d8b2085122e094b514caf803921385d57ec435f7`.
 - After one clean ISO build, verify its Ubuntu 26.04 Resolute root filesystem, ISO structure, BIOS/UEFI El Torito entries, EFI loader, hybrid USB marker and SHA-256. Then the firmware workflow must boot the exact same artifact through BIOS/UEFI optical/USB (all four tests) and reach live userspace.
 - No successful ISO artifact, checksum or real-image boot result has been verified. Therefore Stage 1 remains IN PROGRESS; Stages 2–10 remain QUEUED.
@@ -109,8 +109,8 @@ Exit criteria: every mandatory release check passes on a named commit and signed
 - Active stage: Stage 1 — Bootable build foundation.
 - Active product code branch: `fix/snapshot-package-index-fallback`.
 - Open integration PR: [PR #5](https://github.com/ravaunrichards/NEXORA-OS-1.0/pull/5).
-- Latest PR head at checkpoint: `fc78fa8882b1725efdfd7a0d10cedf281f4a9bd7`.
-- Latest successful targeted checks: repository validation #316 and Ubuntu live-build probe #58 on the latest PR head.
+- Latest PR head at checkpoint: `e7bb3666fc4613a0dc1b1167a4dde45b5dfe2946`.
+- Latest successful targeted checks: repository validation #318 and Ubuntu live-build probe #59 on the latest PR head.
 - Full build #63 failed due the legacy `rsvg` renderer; build #65 is still running on an older source and #69 is queued with the tested SVG and Casper overlay fixes. Do not start another competing full ISO build while either occupies the branch's build concurrency group.
 - Immediate next action: inspect #65 and #69 status/logs; let the current latest-head build prove or expose its next exact failure; then verify the real image and run its four firmware/media boots.
 - Main remains unchanged at `d8b2085122e094b514caf803921385d57ec435f7`.
@@ -120,7 +120,7 @@ Exit criteria: every mandatory release check passes on a named commit and signed
 
 | Stage | State | Evidence |
 |---|---|---|
-| 1. Bootable build foundation | IN PROGRESS | Validation #316 and live-build probe #58 pass; build #65 still running on an older revision and #69 queued on latest; ISO checksum and four real-image boots pending |
+| 1. Bootable build foundation | IN PROGRESS | Validation #318 and live-build probe #59 pass; build #65 still running on older revision and #69 queued with tested renderer fix; ISO checksum and four real-image boots pending |
 | 2. Shared core OS | QUEUED | — |
 | 3. NEXORA Classic | QUEUED | — |
 | 4. NEXORA Flow | QUEUED | — |
