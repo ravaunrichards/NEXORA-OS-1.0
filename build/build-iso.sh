@@ -76,15 +76,15 @@ mkdir -p "$(dirname -- "$DOWNLOAD_LOG")"
 : > "$DOWNLOAD_LOG"
 bash "$ROOT_DIR/build/patch-debootstrap-download-retries.sh" "$RETRY_BIN"
 
-# Preserve signed package metadata from the dated snapshot while allowing
-# debootstrap to fetch only checksum-pinned, version-specific .deb objects
-# from Ubuntu's archive if the snapshot's package endpoint is unavailable.
+# Preserve signed package metadata from the dated snapshot. The private
+# downloader permits only checksum-pinned, exact-relative-path package/index
+# transport fallback; debootstrap validates downloaded content before use.
 export NEXORA_SNAPSHOT_MIRROR="$SNAPSHOT_MIRROR"
 export NEXORA_ARCHIVE_MIRROR="$ARCHIVE_MIRROR"
 export NEXORA_DOWNLOAD_LOG="$DOWNLOAD_LOG"
 export PATH="$RETRY_BIN:$PATH"
 printf 'Pinned metadata mirror: %s\n' "$NEXORA_SNAPSHOT_MIRROR"
-printf 'Exact-path package object fallback: %s\n' "$NEXORA_ARCHIVE_MIRROR"
+printf 'Exact-path package/index transport fallback: %s\n' "$NEXORA_ARCHIVE_MIRROR"
 printf 'Private downloader: %s\n' "$(command -v wget)"
 
 cd "$WORK_DIR"
@@ -97,18 +97,16 @@ cp -a "$ROOT_DIR/installer/includes.chroot/." config/includes.chroot/
   printf 'Release: Ubuntu 26.04 (resolute)\n'
   printf 'Architecture: amd64\n'
   printf 'Ubuntu snapshot metadata: %s\n' "$SNAPSHOT"
-  printf 'Package object and index transport fallback: %s (exact relative path; debootstrap validates pinned checksum and size)\n' "$ARCHIVE_MIRROR"
-  printf 'Live-build integration mode: generic tooling with Ubuntu Resolute suite and Casper explicitly pinned\n'
+  printf 'Package/index transport fallback: %s (exact relative path; debootstrap validates pinned checksum and size)\n' "$ARCHIVE_MIRROR"
+  printf 'Live-build integration: generic tooling with Ubuntu Resolute suite and Casper explicitly pinned\n'
   printf 'Ubuntu bootstrap keyring: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n'
   printf 'Repository commit: %s\n' "$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf unknown)"
   printf 'Started UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$WORK_DIR/build-inputs.txt"
 
-# Ubuntu Resolute's packaged live-build Ubuntu mode still requests removed
-# Oneiric Syslinux/gfxboot packages. Use its generic integration mode, but
-# explicitly pin both distribution identifiers, the Ubuntu archive keyring,
-# Ubuntu archive areas and Casper so the target remains Ubuntu 26.04.
-# The generated squashfs is checked below before any ISO is accepted.
+# Ubuntu Resolute's packaged live-build Ubuntu mode requests removed legacy
+# Oneiric Syslinux/gfxboot packages. Use generic integration while explicitly
+# pinning Ubuntu suites, trust roots, archive areas, mirrors and Casper.
 lb config \
   --mode debian \
   --distribution resolute \
@@ -148,141 +146,19 @@ lb config \
   --iso-publisher "NEXORA OS Project" \
   --iso-volume "NEXORA_2604" 2>&1 | tee "$WORK_DIR/config.log"
 
-printf 'Starting live-build with Ubuntu Resolute archive metadata and Casper. Generic live-build integration is used only to avoid removed Ubuntu-specific boot-theme packages.\n'
+printf 'Starting live-build with Ubuntu Resolute archive metadata and Casper.\n'
 lb build 2>&1 | tee "$WORK_DIR/build.log"
 
-# Reject any target OS/suite drift before the candidate ISO is assembled.
+# Refuse an image whose actual installed root filesystem is not Ubuntu 26.04
+# Resolute. This check runs before the image is copied to the output folder.
 mapfile -t ROOTFS_CANDIDATES < <(find "$WORK_DIR/binary" -type f -name filesystem.squashfs -print | sort)
-(( \${#ROOTFS_CANDIDATES[@]} == 1 )) || fail "Expected exactly one filesystem.squashfs in the binary image; found \${#ROOTFS_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
-ROOTFS_IMAGE="\${ROOTFS_CANDIDATES[0]}"
+(( ${#ROOTFS_CANDIDATES[@]} == 1 )) || fail "Expected exactly one filesystem.squashfs; found ${#ROOTFS_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
+ROOTFS_IMAGE="${ROOTFS_CANDIDATES[0]}"
 ROOTFS_OS_RELEASE="$WORK_DIR/rootfs-os-release.txt"
-unsquashfs -cat "$ROOTFS_IMAGE" usr/lib/os-release > "$ROOTFS_OS_RELEASE" || fail "Could not read target /usr/lib/os-release from $ROOTFS_IMAGE."
-grep -Eq '^ID="?ubuntu"?(( ${#ISO_CANDIDATES[@]} == 1 )) || fail "Expected exactly one generated ISO; found ${#ISO_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
-CANDIDATE="${ISO_CANDIDATES[0]}"
-
-DUAL_BOOT_CANDIDATE="$WORK_DIR/$ISO_NAME.dualboot.iso"
-bash "$ROOT_DIR/build/add-uefi-boot.sh" "$CANDIDATE" "$DUAL_BOOT_CANDIDATE"
-CANDIDATE="$DUAL_BOOT_CANDIDATE"
-
-xorriso -indev "$CANDIDATE" -report_el_torito plain > "$WORK_DIR/eltorito-report.txt" 2>&1 || \
-  fail "xorriso could not inspect the generated image. Workspace retained at $WORK_DIR."
-grep -qi "BIOS" "$WORK_DIR/eltorito-report.txt" || \
-  fail "Generated image has no detectable BIOS boot entry. Workspace retained at $WORK_DIR."
-grep -qi "UEFI" "$WORK_DIR/eltorito-report.txt" || grep -Eqi '0x0*ef|platform.*ef' "$WORK_DIR/eltorito-report.txt" || \
-  fail "Generated image has no detectable UEFI boot entry. Workspace retained at $WORK_DIR."
-
-xorriso -indev "$CANDIDATE" -report_system_area plain > "$WORK_DIR/system-area-report.txt" 2>&1 || \
-  fail "xorriso could not inspect the hybrid system area. Workspace retained at $WORK_DIR."
-grep -Eqi 'MBR partition[[:space:]]*:[[:space:]]*[0-9]+[[:space:]]+0x[0-9a-f]+[[:space:]]+0xef' "$WORK_DIR/system-area-report.txt" || \
-  fail "Generated image has no EFI-marked MBR partition (type 0xEF). Workspace retained at $WORK_DIR."
-
-install -m 0644 "$CANDIDATE" "$ISO_PATH"
-(
-  cd "$OUTPUT_DIR"
-  sha256sum "$ISO_NAME" > "$ISO_NAME.sha256"
-)
-cp "$WORK_DIR/build-inputs.txt" "$INFO_PATH"
-{
-  printf 'Completed UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  printf 'ISO: %s\n' "$ISO_PATH"
-  printf 'SHA-256: '
-  sha256sum "$ISO_PATH" | awk '{print $1}'
-  printf 'El Torito report: %s\n' "$WORK_DIR/eltorito-report.txt"
-  printf 'Hybrid system area report: %s\n' "$WORK_DIR/system-area-report.txt"
-  printf 'Config log: %s\n' "$WORK_DIR/config.log"
-  printf 'Build log: %s\n' "$WORK_DIR/build.log"
-  printf 'Download fallback log: %s\n' "$DOWNLOAD_LOG"
-} >> "$INFO_PATH"
-
-printf '\nBuild produced an engineering ISO: %s\n' "$ISO_PATH"
-printf 'Checksum: %s\n' "$CHECKSUM_PATH"
-printf 'Build workspace retained for inspection: %s\n' "$WORK_DIR"
-printf 'IMPORTANT: Boot-test in both UEFI and BIOS virtual machines before treating this image as usable. The included Calamares installer is experimental; do not install on real disks until disposable-VM acceptance tests pass.\n'
- "$ROOTFS_OS_RELEASE" || fail "Refusing non-Ubuntu root filesystem; expected ID=ubuntu."
-grep -Eq '^VERSION_ID="?26\.04"?(( ${#ISO_CANDIDATES[@]} == 1 )) || fail "Expected exactly one generated ISO; found ${#ISO_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
-CANDIDATE="${ISO_CANDIDATES[0]}"
-
-DUAL_BOOT_CANDIDATE="$WORK_DIR/$ISO_NAME.dualboot.iso"
-bash "$ROOT_DIR/build/add-uefi-boot.sh" "$CANDIDATE" "$DUAL_BOOT_CANDIDATE"
-CANDIDATE="$DUAL_BOOT_CANDIDATE"
-
-xorriso -indev "$CANDIDATE" -report_el_torito plain > "$WORK_DIR/eltorito-report.txt" 2>&1 || \
-  fail "xorriso could not inspect the generated image. Workspace retained at $WORK_DIR."
-grep -qi "BIOS" "$WORK_DIR/eltorito-report.txt" || \
-  fail "Generated image has no detectable BIOS boot entry. Workspace retained at $WORK_DIR."
-grep -qi "UEFI" "$WORK_DIR/eltorito-report.txt" || grep -Eqi '0x0*ef|platform.*ef' "$WORK_DIR/eltorito-report.txt" || \
-  fail "Generated image has no detectable UEFI boot entry. Workspace retained at $WORK_DIR."
-
-xorriso -indev "$CANDIDATE" -report_system_area plain > "$WORK_DIR/system-area-report.txt" 2>&1 || \
-  fail "xorriso could not inspect the hybrid system area. Workspace retained at $WORK_DIR."
-grep -Eqi 'MBR partition[[:space:]]*:[[:space:]]*[0-9]+[[:space:]]+0x[0-9a-f]+[[:space:]]+0xef' "$WORK_DIR/system-area-report.txt" || \
-  fail "Generated image has no EFI-marked MBR partition (type 0xEF). Workspace retained at $WORK_DIR."
-
-install -m 0644 "$CANDIDATE" "$ISO_PATH"
-(
-  cd "$OUTPUT_DIR"
-  sha256sum "$ISO_NAME" > "$ISO_NAME.sha256"
-)
-cp "$WORK_DIR/build-inputs.txt" "$INFO_PATH"
-{
-  printf 'Completed UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  printf 'ISO: %s\n' "$ISO_PATH"
-  printf 'SHA-256: '
-  sha256sum "$ISO_PATH" | awk '{print $1}'
-  printf 'El Torito report: %s\n' "$WORK_DIR/eltorito-report.txt"
-  printf 'Hybrid system area report: %s\n' "$WORK_DIR/system-area-report.txt"
-  printf 'Config log: %s\n' "$WORK_DIR/config.log"
-  printf 'Build log: %s\n' "$WORK_DIR/build.log"
-  printf 'Download fallback log: %s\n' "$DOWNLOAD_LOG"
-} >> "$INFO_PATH"
-
-printf '\nBuild produced an engineering ISO: %s\n' "$ISO_PATH"
-printf 'Checksum: %s\n' "$CHECKSUM_PATH"
-printf 'Build workspace retained for inspection: %s\n' "$WORK_DIR"
-printf 'IMPORTANT: Boot-test in both UEFI and BIOS virtual machines before treating this image as usable. The included Calamares installer is experimental; do not install on real disks until disposable-VM acceptance tests pass.\n'
- "$ROOTFS_OS_RELEASE" || fail "Refusing non-Ubuntu-26.04 root filesystem."
-grep -Eq '^VERSION_CODENAME="?resolute"?(( ${#ISO_CANDIDATES[@]} == 1 )) || fail "Expected exactly one generated ISO; found ${#ISO_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
-CANDIDATE="${ISO_CANDIDATES[0]}"
-
-DUAL_BOOT_CANDIDATE="$WORK_DIR/$ISO_NAME.dualboot.iso"
-bash "$ROOT_DIR/build/add-uefi-boot.sh" "$CANDIDATE" "$DUAL_BOOT_CANDIDATE"
-CANDIDATE="$DUAL_BOOT_CANDIDATE"
-
-xorriso -indev "$CANDIDATE" -report_el_torito plain > "$WORK_DIR/eltorito-report.txt" 2>&1 || \
-  fail "xorriso could not inspect the generated image. Workspace retained at $WORK_DIR."
-grep -qi "BIOS" "$WORK_DIR/eltorito-report.txt" || \
-  fail "Generated image has no detectable BIOS boot entry. Workspace retained at $WORK_DIR."
-grep -qi "UEFI" "$WORK_DIR/eltorito-report.txt" || grep -Eqi '0x0*ef|platform.*ef' "$WORK_DIR/eltorito-report.txt" || \
-  fail "Generated image has no detectable UEFI boot entry. Workspace retained at $WORK_DIR."
-
-xorriso -indev "$CANDIDATE" -report_system_area plain > "$WORK_DIR/system-area-report.txt" 2>&1 || \
-  fail "xorriso could not inspect the hybrid system area. Workspace retained at $WORK_DIR."
-grep -Eqi 'MBR partition[[:space:]]*:[[:space:]]*[0-9]+[[:space:]]+0x[0-9a-f]+[[:space:]]+0xef' "$WORK_DIR/system-area-report.txt" || \
-  fail "Generated image has no EFI-marked MBR partition (type 0xEF). Workspace retained at $WORK_DIR."
-
-install -m 0644 "$CANDIDATE" "$ISO_PATH"
-(
-  cd "$OUTPUT_DIR"
-  sha256sum "$ISO_NAME" > "$ISO_NAME.sha256"
-)
-cp "$WORK_DIR/build-inputs.txt" "$INFO_PATH"
-{
-  printf 'Completed UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  printf 'ISO: %s\n' "$ISO_PATH"
-  printf 'SHA-256: '
-  sha256sum "$ISO_PATH" | awk '{print $1}'
-  printf 'El Torito report: %s\n' "$WORK_DIR/eltorito-report.txt"
-  printf 'Hybrid system area report: %s\n' "$WORK_DIR/system-area-report.txt"
-  printf 'Config log: %s\n' "$WORK_DIR/config.log"
-  printf 'Build log: %s\n' "$WORK_DIR/build.log"
-  printf 'Download fallback log: %s\n' "$DOWNLOAD_LOG"
-} >> "$INFO_PATH"
-
-printf '\nBuild produced an engineering ISO: %s\n' "$ISO_PATH"
-printf 'Checksum: %s\n' "$CHECKSUM_PATH"
-printf 'Build workspace retained for inspection: %s\n' "$WORK_DIR"
-printf 'IMPORTANT: Boot-test in both UEFI and BIOS virtual machines before treating this image as usable. The included Calamares installer is experimental; do not install on real disks until disposable-VM acceptance tests pass.\n'
- "$ROOTFS_OS_RELEASE" || fail "Refusing root filesystem outside Ubuntu Resolute."
+unsquashfs -cat "$ROOTFS_IMAGE" usr/lib/os-release > "$ROOTFS_OS_RELEASE" || fail "Could not read target /usr/lib/os-release."
+grep -Eq '^ID="?ubuntu"?$' "$ROOTFS_OS_RELEASE" || fail "Refusing non-Ubuntu root filesystem."
+grep -Eq '^VERSION_ID="?26\.04"?$' "$ROOTFS_OS_RELEASE" || fail "Refusing root filesystem outside Ubuntu 26.04."
+grep -Eq '^VERSION_CODENAME="?resolute"?$' "$ROOTFS_OS_RELEASE" || fail "Refusing root filesystem outside Ubuntu Resolute."
 printf 'Verified target root filesystem: Ubuntu 26.04 (resolute).\n'
 printf 'Verified target OS: Ubuntu 26.04 (resolute)\n' >> "$WORK_DIR/build-inputs.txt"
 
