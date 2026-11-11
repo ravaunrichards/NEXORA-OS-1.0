@@ -100,7 +100,7 @@ bash "$ROOT_DIR/build/configure-ubuntu-archives.sh" config "$SNAPSHOT"
   printf 'Ubuntu snapshot metadata: %s\n' "$SNAPSHOT"
   printf 'Package/index transport fallback: %s (exact relative path; debootstrap validates pinned checksum and size)\n' "$ARCHIVE_MIRROR"
   printf 'Live-build integration: generic tooling with Ubuntu Resolute suite and Casper explicitly pinned\n'
-  printf 'Ubuntu security pocket: resolute-security (signed snapshot metadata)\\n'
+  printf 'Ubuntu security pocket: resolute-security (signed snapshot metadata)\n'
   printf 'Ubuntu bootstrap keyring: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n'
   printf 'Repository commit: %s\n' "$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf unknown)"
   printf 'Started UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -135,8 +135,8 @@ lb config \
   --checksums sha256 \
   --apt-recommends true \
   --apt-secure true \
-  --security false \\
-  --updates true \\
+  --security false \
+  --updates true \
   --firmware-binary true \
   --firmware-chroot false \
   --debian-installer false \
