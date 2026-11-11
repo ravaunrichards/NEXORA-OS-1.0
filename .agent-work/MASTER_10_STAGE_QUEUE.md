@@ -38,12 +38,12 @@ Current evidence (2026-11-11, refreshed 09:55 UTC):
 - Full build #65 remains in progress on older commit `3aea17d3d645c7061dbcc3acf2a402aa8412ab55`. Its live job logs are not currently downloadable while running; it predates the latest explicit output-argument correction and is not the acceptance build.
 - The original PR-branch run #65 remains reported in progress with stale job metadata since 08:44 UTC, and #69 remains pending behind it. Both are being left untouched.
 - To avoid this stale per-branch concurrency queue without cancelling/overwriting existing work, recovery branch `recovery/stage1-iso-acceptance` was created from latest verified Stage 1 code commit `e7bb3666fc4613a0dc1b1167a4dde45b5dfe2946`. Its only trigger change is a comment in the ISO workflow; source build scripts and packages are unchanged.
-- Isolated full ISO build #70 is running on recovery branch commit `6c65da37022b23c8891d2392b0a2511ec34297bd`. Host/dependency preflight passed, and its full ISO build step is active. Live job logs are not exposed until the step completes.
+- Isolated full ISO build #70 (run ID `42999044714`) is on recovery branch commit `6c65da37022b23c8891d2392b0a2511ec34297bd`; implementation base remains `e7bb3666fc4613a0dc1b1167a4dde45b5dfe2946`. Latest refresh on 2026-11-11: run status is `in_progress`; job `130450283455` is still on step 4, **Build NEXORA engineering ISO**. Steps 1–3 (runner setup, checkout, Ubuntu 26.04 AMD64 dependency/preflight validation) passed; step 5 (artifact upload) is pending. No artifact exists yet. Fetching the active job log returns Azure `BlobNotFound`; no build failure is established. Do not cancel or duplicate this active build.
 - Repository validation #319 passed on the isolated build commit. It explicitly passed the downloader fallback, firmware selection, Ubuntu Resolute live-build/Casper compatibility, BIOS staging, Casper/Syslinux overlay preservation, QEMU early-shutdown and installer safeguard tests.
 - Ubuntu live-build probe #59 also passed on the same implementation base commit `e7bb3666fc4613a0dc1b1167a4dde45b5dfe2946`, including exact SVG `rsvg-convert` conversion assertions. A subsequent probe-only commit strengthened the exact output-argument checks without changing ISO builder code. Do not start another competing build while #65/#69 occupy the branch's concurrency group.
 - PR #5 remains open and unmerged. Main remains unchanged at `d8b2085122e094b514caf803921385d57ec435f7`.
 - After one clean ISO build, verify its Ubuntu 26.04 Resolute root filesystem, ISO structure, BIOS/UEFI El Torito entries, EFI loader, hybrid USB marker and SHA-256. Then the firmware workflow must boot the exact same artifact through BIOS/UEFI optical/USB (all four tests) and reach live userspace.
-- As of 09:50 UTC no successful ISO artifact or checksum is available, and no real-image boot result has been verified. Therefore Stage 1 remains IN PROGRESS; Stages 2–10 remain QUEUED.
+- On the latest 2026-11-11 refresh, run #70 has no artifacts, checksum or build-info output yet. The firmware workflow has not been triggered for #70 because its `workflow_run` trigger runs only after a successful ISO build. Therefore no ISO structure or live-boot test has been verified; Stage 1 remains IN PROGRESS and Stages 2–10 remain QUEUED.
 
 ### STAGE 2 — Shared core operating system and system integration
 **Status: QUEUED**
@@ -116,7 +116,7 @@ Exit criteria: every mandatory release check passes on a named commit and signed
 - Latest PR head at checkpoint: `e7bb3666fc4613a0dc1b1167a4dde45b5dfe2946`.
 - Latest successful targeted checks: repository validation #318 and Ubuntu live-build probe #59 on the latest PR head.
 - Full build #63 failed due the legacy `rsvg` renderer; build #65 is still running on an older source and #69 is queued with the tested SVG and Casper overlay fixes. Do not start another competing full ISO build while either occupies the branch's build concurrency group.
-- Immediate next action: inspect #65 and #69 status/logs; let the current latest-head build prove or expose its next exact failure; then verify the real image and run its four firmware/media boots.
+- Immediate next action: leave #70 running without cancellation or a competing build; refresh its run/job/artifact state. Once it completes, retrieve the uploaded full build log and exact artifact, verify the image and SHA-256, then inspect/execute the four firmware/media boots against that exact artifact. Keep older #65 and queued #69 untouched.
 - Main remains unchanged at `d8b2085122e094b514caf803921385d57ec435f7`.
 - No license or main-branch protection setting has been changed; both require owner decisions/actions.
 
@@ -124,7 +124,7 @@ Exit criteria: every mandatory release check passes on a named commit and signed
 
 | Stage | State | Evidence |
 |---|---|---|
-| 1. Bootable build foundation | IN PROGRESS | Validation #319 and live-build probe #59 pass; isolated full build #70 active after preflight; ISO checksum and four real-image boots pending |
+| 1. Bootable build foundation | IN PROGRESS | Validation #319 passed on `6c65da37022b23c8891d2392b0a2511ec34297bd`; live-build probe #59 passed on `e7bb3666fc4613a0dc1b1167a4dde45b5dfe2946`; run #70 (`42999044714`), job `130450283455`, step 4 ISO generation active; no artifact yet; SHA-256 and four real-image boots pending |
 | 2. Shared core OS | QUEUED | — |
 | 3. NEXORA Classic | QUEUED | — |
 | 4. NEXORA Flow | QUEUED | — |
