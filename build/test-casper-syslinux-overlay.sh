@@ -24,7 +24,7 @@ Check_package chroot /usr/bin/rsvg librsvg2-bin
 Chroot chroot "rsvg --format png --height 480 --width 640 splash.svg splash.png"
 rsvg --format png --height 480 --width 640 "${_TARGET}/splash.svg" "${_TARGET}/splash.png"
 # Configuring files
-if [ -e "${_TARGET}/live.cfg.in"
+if [ -e "${_TARGET}/live.cfg.in" ]
 then
     mv binary/live/vmlinuz-* binary/live/vmlinuz
     mv binary/live/initrd.img-* binary/live/initrd.img
@@ -56,7 +56,8 @@ grep -Fq 'binary/${_NEXORA_INITRAMFS_DIR}/initrd.img-*' "$PATCHED"
 grep -Fq '/${_NEXORA_INITRAMFS_DIR}/vmlinuz' "$PATCHED"
 grep -Fq '/${_NEXORA_INITRAMFS_DIR}/initrd.img' "$PATCHED"
 grep -Fq '/usr/bin/rsvg-convert' "$PATCHED"
-grep -Fq 'rsvg-convert --format png --height 480 --width 640' "$PATCHED"
+grep -Fq 'rsvg-convert --format png --height 480 --width 640 splash.svg -o splash.png' "$PATCHED"
+grep -Fq '"${_TARGET}/splash.svg" -o "${_TARGET}/splash.png"' "$PATCHED"
 ! grep -Eq '(^|[^[:alnum:]_-])rsvg([^[:alnum:]_-]|$)' "$PATCHED"
 [[ -L "$OVERLAY/bootloaders" ]]
 [[ "$(readlink "$OVERLAY/bootloaders")" == "$BOOTLOADERS" ]]
