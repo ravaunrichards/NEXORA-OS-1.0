@@ -91,7 +91,10 @@ printf 'Exact-path package/index transport fallback: %s\n' "$NEXORA_ARCHIVE_MIRR
 printf 'Private downloader: %s\n' "$(command -v wget)"
 
 cd "$WORK_DIR"
-mkdir -p config/package-lists config/includes.chroot config/archives
+mkdir -p config/package-lists config/includes.chroot config/archives config/apt
+# APT downloads use bounded retry/backoff only during image construction.
+# This hook is copied into the chroot by live-build and removed after package installation.
+install -m 0644 "$ROOT_DIR/build/apt-download.conf" config/apt/apt.conf
 cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
 cp -a "$ROOT_DIR/installer/includes.chroot/." config/includes.chroot/
 bash "$ROOT_DIR/build/prepare-syslinux-bootloaders.sh" config
