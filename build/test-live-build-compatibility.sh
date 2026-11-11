@@ -25,7 +25,12 @@ require_option '--keyring-packages ubuntu-keyring'
 require_option '--initramfs casper'
 require_option '--syslinux-theme live-build'
 require_option '--security false'
-require_option '--updates true'
+grep -Fq 'export LB_UPDATES=true' "$BUILD_SCRIPT" || \
+  fail "The Ubuntu updates pocket must be enabled through the live-build environment."
+
+if grep -Fq -- '--updates ' "$BUILD_SCRIPT"; then
+  fail "This live-build version does not accept an --updates command-line option."
+fi
 
 if grep -Fq -- '--security true' "$BUILD_SCRIPT"; then
   fail "Generic live-build Debian mode must not generate its invalid Ubuntu security suite."
