@@ -28,7 +28,7 @@ source /etc/os-release
 HOST_ARCH="$(dpkg --print-architecture)"
 [[ "$HOST_ARCH" == "amd64" ]] || fail "Build host must be amd64; detected: $HOST_ARCH."
 
-for command_name in lb debootstrap mksquashfs unsquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find wget; do
+for command_name in lb debootstrap mksquashfs unsquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find grep sort wget; do
   command -v "$command_name" >/dev/null 2>&1 || fail "Missing build tool: $command_name. Install the packages listed in build/README.md."
 done
 
