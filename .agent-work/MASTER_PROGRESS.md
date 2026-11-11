@@ -1,6 +1,6 @@
 # NEXORA OS — master execution progress
 
-Last updated: 2026-11-11 (live-build probe and full-build rerun queued)
+Last updated: 2026-11-11 (probe assertions repaired; ISO build running)
 
 ## Overall status
 
@@ -15,11 +15,11 @@ Last updated: 2026-11-11 (live-build probe and full-build rerun queued)
 - **Current task:** Remove the Ubuntu Resolute live-build Syslinux legacy-theme dependency without changing the Ubuntu 26.04 target; verify the resulting mode, suite, keyring, Casper initramfs, and target release in CI.
 - **Execution branch:** `fix/snapshot-package-index-fallback`.
 - **Open pull request:** [#5](https://github.com/ravaunrichards/NEXORA-OS-1.0/pull/5).
-- **Current active branch HEAD:** `d34a114f0cb1334a77025bc7a23d88ee90b41a24`. **Latest completed repository validation:** run #174 succeeded on `a9aaf1a74189293e80ff7cc43fc07750319a2d3f`; run #176 is validating `d34a114f0cb1334a77025bc7a23d88ee90b41a24`. **Latest implementation validation before these commits:** run #170 succeeded on `b70a27e5fa9c2f37a4ec3fec1c63e2838ded4604`.
+- **Current active branch HEAD:** `c0a73dd243fd126e2c633131c56eccb500b462a7`. **Latest repository validation:** run #183 passed on this commit. **Live-build configuration probe:** run #12 is queued/running on this commit. **Full ISO build:** run #48 is running on `d34a114f0cb1334a77025bc7a23d88ee90b41a24`; build-host dependency preflight passed and the build step is active.
 - **Baseline commit for the active PR branch:** `366d0ab2330725a55682906c01303b53815c526d`.
 - **Last verified main commit:** `d8b2085122e094b514caf803921385d57ec435f7`.
-- **Last completed action:** Diagnosed live-build probe run #8: `lb config` created `$probe_dir/config` as a directory, colliding with the workflow's dump output path. Changed the dump target to `config-dump.txt` (commit `a9aaf1a74189293e80ff7cc43fc07750319a2d3f`). Added `grep` and `sort` to the build host preflight command list (commit `d34a114f0cb1334a77025bc7a23d88ee90b41a24`). Repository validation #174 passed on the first fix commit; validation #176, probe #10 and full ISO build #48 are running on current HEAD.
-- **Exact next action:** Inspect current Actions runs #176 (repository validation), #10 (live-build configuration probe) and #48 (full ISO build) on `d34a114f0cb1334a77025bc7a23d88ee90b41a24`. Resolve any observed failure, then verify artifact, checksum, structure and four QEMU boot cases. Do not mark S01 complete until all gates pass.
+- **Last completed action:** Corrected the probe's `lb config --dump` destination collision (`config-dump.txt`), then inspected its uploaded artifact and found the actual assertions needed to account for `config/common:` prefixes in live-build's dump output. Rewrote the workflow cleanly with prefix-aware assertions in commit `c0a73dd243fd126e2c633131c56eccb500b462a7`. Repository validation #183 passed on this commit. Probe #12 is queued/running. Full ISO build #48 has passed host/dependency preflight and is running its build step on the prior source commit.
+- **Exact next action:** Inspect probe #12 and full ISO build #48 outcomes/logs. Fix the next actual failure with a minimal change, rerun the probe and ISO build, then verify Ubuntu 26.04 identity, artifact, checksum, hybrid structure and four QEMU boot cases. Do not mark S01 complete until all gates pass.
 
 ## Stage register
 
@@ -68,7 +68,7 @@ No existing product files were overwritten in this checkpoint.
 
 1. Snapshot Packages index objects intermittently failed from the pinned snapshot endpoint. PR #5 adds same-relative-path transport fallback while preserving signed snapshot metadata and debootstrap checksum/size verification. Its targeted repository validation passes; its full ISO result is not yet successful.
 2. The live-build Ubuntu-mode Syslinux path failed on run #45 due obsolete Oneiric theme/gfxboot packages. The current candidate uses generic live-build mode while explicitly pinning Ubuntu Resolute suite, Ubuntu archive keyring, Casper initramfs and archive areas; post-build squashfs checks reject non-Ubuntu 26.04/Resolute. This candidate is not accepted until the probe and a complete image build pass.
-3. A later candidate commit had malformed rootfs verification/ISO assembly shell syntax (run #162) and a malformed YAML workflow path (run #164). The build script and probe were repaired; the fragile option regression test was hardened. Latest validation #170 passed. A later live-build probe run #8 failed because the workflow tried to redirect `lb config --dump` into `$probe_dir/config`, which `lb config` had already created as a directory. The output target was changed to `config-dump.txt` in commit `a9aaf1a74189293e80ff7cc43fc07750319a2d3f`. A current probe rerun #10 and full ISO build #48 are running on commit `d34a114f0cb1334a77025bc7a23d88ee90b41a24`.
+3. A later candidate commit had malformed rootfs verification/ISO assembly shell syntax (run #162) and malformed YAML workflow path (run #164). Those were repaired and repository validation #170 passed. Probe #8 exposed a config-dump filename collision; that was fixed in `a9aaf1a74189293e80ff7cc43fc07750319a2d3f`. Probe #10 then showed that live-build prefixes dump lines with their source file (for example `config/common:`), so start-anchored assertions failed. A first regex edit accidentally malformed the workflow YAML; validation runs #181/#182 detected this. The workflow was rewritten cleanly in commit `c0a73dd243fd126e2c633131c56eccb500b462a7`; validation #183 passes. Probe #12 is pending/running, and full ISO build #48 is currently active after its host preflight passed.
 4. Earlier `nouveau-firmware` and removed memtest filename failures have targeted regression checks; the full build must still demonstrate that downstream stages pass.
 
 ## Outstanding defects and dependencies
