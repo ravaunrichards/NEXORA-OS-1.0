@@ -63,7 +63,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux
 
-          for command_name in lb debootstrap mksquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find; do
+          for command_name in lb debootstrap mksquashfs unsquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find; do
             command -v "$command_name" >/dev/null 2>&1 || {
               echo "::error::Required build command missing after package installation: $command_name"
               exit 1

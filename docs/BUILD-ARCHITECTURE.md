@@ -5,7 +5,7 @@
 - Base: Ubuntu 26.04 LTS, codename resolute.
 - Architecture: amd64 (x86-64).
 - Image type: hybrid live ISO.
-- Live boot: Ubuntu-mode live-build with casper package included.
+- Live boot: live-build generic integration mode with explicit Ubuntu Resolute distribution and parent distribution, Ubuntu archive keyring/package trust roots, Ubuntu repositories and Casper initramfs; the generated squashfs must independently identify as Ubuntu 26.04 Resolute.
 - Bootloader: GRUB, pending actual UEFI and BIOS boot verification.
 - Desktop foundation: KDE Plasma packages as a temporary shared base.
 
@@ -13,7 +13,7 @@
 
 The Ubuntu 26.04 archive currently publishes live-build. However, upstream live-build documentation describes derivative modes, including Ubuntu mode, as experimental/best-effort, with derivative projects responsible for supporting their use. This is an engineering starting point, not a claim that live-build is Canonical's official image pipeline or that the first build will work without iteration.
 
-If the first clean build exposes unsupported Ubuntu-specific behavior, stop and resolve that build-system issue before adding desktops or application layers. Do not hide build failures or replace the target OS with Debian.
+Ubuntu Resolute's packaged live-build Ubuntu mode currently requests obsolete Ubuntu Oneiric Syslinux-theme and gfxboot packages; its GRUB mode has also been reported to request obsolete `grub-legacy`. The candidate workaround uses live-build generic integration mode only, while explicitly pinning the Ubuntu 26.04 suite, parent suite, archive keyring, archive components/mirrors and Casper. A post-build squashfs identity check rejects any output whose `/usr/lib/os-release` is not Ubuntu 26.04 Resolute. This workaround is not accepted until the target-identity probe and a complete build pass. Do not hide build failures or replace the target OS with Debian.
 
 ## Archive pinning
 
@@ -42,4 +42,6 @@ These are separate milestones and must not be implied by a successful live ISO b
 - Ubuntu 26.04 package archive: https://packages.ubuntu.com/resolute/live-build
 - Ubuntu Snapshot Service: https://snapshot.ubuntu.com/
 - Ubuntu snapshot documentation: https://ubuntu.com/server/docs/how-to/software/snapshot-service/
+- Ubuntu Resolute `lb config` options: https://manpages.ubuntu.com/manpages/resolute/man1/lb_config.1.html
+- Ubuntu live-build Syslinux/GRUB legacy dependency report: https://bugs.launchpad.net/ubuntu/+source/live-build/+bug/2154055
 - Debian Live manual, derivative mode note: https://live-team.pages.debian.net/live-manual/html/live-manual/customizing-package-installation.en.html
