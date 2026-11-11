@@ -8,9 +8,9 @@ trap 'rm -rf -- "$TMP_ROOT"' EXIT
 
 SOURCE="$TMP_ROOT/lb_binary_syslinux"
 BOOTLOADERS="$TMP_ROOT/bootloaders"
-COMMON_LIBRARY="$TMP_ROOT/live-build.sh"
+COMMON_LIBRARY="$TMP_ROOT/usr/lib/live/build.sh"
 OVERLAY="$TMP_ROOT/live-build-overlay"
-mkdir -p "$BOOTLOADERS/isolinux"
+mkdir -p "$BOOTLOADERS/isolinux" "$(dirname -- "$COMMON_LIBRARY")"
 printf 'isolinux template fixture\n' > "$BOOTLOADERS/isolinux/isolinux.cfg"
 printf '# packaged common-library fixture\n' > "$COMMON_LIBRARY"
 
