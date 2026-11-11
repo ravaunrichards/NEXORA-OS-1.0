@@ -37,6 +37,17 @@ path = Path(sys.argv[1])
 common_library = Path(sys.argv[2])
 source = path.read_text(encoding="utf-8")
 
+# Ubuntu Resolute's librsvg2-bin provides rsvg-convert, while this live-build
+# stage still checks for and invokes the removed legacy "rsvg" executable.
+# Rewrite only standalone command/path tokens in the private stage copy.
+legacy_rsvg = re.compile(r"(?<![A-Za-z0-9_-])rsvg(?![A-Za-z0-9_-])")
+legacy_rsvg_count = len(legacy_rsvg.findall(source))
+if legacy_rsvg_count < 2:
+    raise SystemExit(
+        "Unsupported live-build Syslinux theme layout: expected legacy rsvg check and invocation."
+    )
+source = legacy_rsvg.sub("rsvg-convert", source)
+
 # The Resolute package's stage runner can invoke the copied script with its
 # helper-library selector empty, yielding the invalid /usr/lib//build.sh.
 # Bind the private override to the package-owned, stable common library path.
