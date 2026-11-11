@@ -46,7 +46,7 @@ if legacy_rsvg_count >= 2:
     source = legacy_rsvg.sub("rsvg-convert", source)
     # The old rsvg CLI accepted INPUT OUTPUT; rsvg-convert uses INPUT -o OUTPUT.
     source, converted_invocations = re.subn(
-        r'(rsvg-convert\\s+--format\\s+png\\s+--height\\s+480\\s+--width\\s+640\\s+)(?P<input>"[^"]+"|[^\\s"]+)\\s+(?P<output>"[^"]+"|[^\\s"]+)',
+        r'(rsvg-convert\s+--format\s+png\s+--height\s+480\s+--width\s+640\s+)(?P<input>"[^"]+"|[^\s"]+)\s+(?P<output>"[^"]+"|[^\s"]+)',
         lambda match: match.group(1) + match.group("input") + " -o " + match.group("output"),
         source,
     )
