@@ -75,6 +75,23 @@ DOWNLOAD_LOG="${NEXORA_DOWNLOAD_LOG:-${RUNNER_TEMP:-$WORK_DIR}/nexora-download-f
 mkdir -p "$(dirname -- "$DOWNLOAD_LOG")"
 : > "$DOWNLOAD_LOG"
 bash "$ROOT_DIR/build/patch-debootstrap-download-retries.sh" "$RETRY_BIN"
+
+# Use a private copy of debootstrap's support scripts so the metadata-fetch
+# function calls the exact retry wrapper even if live-build sanitizes PATH.
+DEBOOTSTRAP_OVERLAY="$WORK_DIR/debootstrap-overlay"
+bash "$ROOT_DIR/build/prepare-debootstrap-overlay.sh" "$DEBOOTSTRAP_OVERLAY" /usr/share/debootstrap
+cat > "$RETRY_BIN/debootstrap" <<'DEBOOTSTRAP_WRAPPER'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+: "${NEXORA_DEBOOTSTRAP_DIR:?NEXORA_DEBOOTSTRAP_DIR is required}"
+: "${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET is required}"
+export DEBOOTSTRAP_DIR="$NEXORA_DEBOOTSTRAP_DIR"
+exec /usr/sbin/debootstrap "$@"
+DEBOOTSTRAP_WRAPPER
+chmod 0755 "$RETRY_BIN/debootstrap"
+export NEXORA_DEBOOTSTRAP_DIR="$DEBOOTSTRAP_OVERLAY"
+export NEXORA_RETRY_WGET="$RETRY_BIN/wget"
+
 LIVE_BUILD_OVERLAY="$WORK_DIR/live-build-overlay"
 bash "$ROOT_DIR/build/prepare-casper-syslinux-overlay.sh" "$LIVE_BUILD_OVERLAY"
 export LIVE_BUILD="$LIVE_BUILD_OVERLAY"
