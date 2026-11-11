@@ -20,6 +20,8 @@ All requirements from the NEXORA OS 1.0 product and engineering brief must map t
 - Stabilize the live-build/debootstrap pipeline and keep the dated snapshot, signed Release metadata and package identity pinned.
 - Keep any transport fallback narrowly scoped to exact relative paths and require debootstrap checksum/size verification.
 - Resolve obsolete Syslinux theme/gfxboot package requests; explicitly verify bootloader configuration and live-build package/module behavior against Resolute.
+- Preserve Ubuntu APT pocket naming in generic mode: keep resolute-updates enabled using exported LB_UPDATES=true; disable only Debian-mode automatic security-source generation; add signed resolute-security from the selected snapshot for build time and security.ubuntu.com resolute-security for the installed OS.
+- Test the generated .list.chroot and .list.binary sources, the Ubuntu archive key path and the absence of the invalid resolute/updates suite.
 - Retain the explicit supported Ubuntu firmware metapackage; prevent legacy firmware auto-injection and outdated memtest filename assumptions.
 - Preserve Casper live boot, the Ubuntu kernel and the shared KDE Plasma base.
 - Resolve package manifest/dependency failures and any new errors from the actual build logs.
@@ -28,7 +30,7 @@ All requirements from the NEXORA OS 1.0 product and engineering brief must map t
 - Boot the actual image under BIOS and UEFI, from optical and USB media, using QEMU; preserve serial logs, commit, snapshot, artifact and checksum.
 - Document what synthetic tests do and do not prove.
 **Acceptance:** Successful full build on supported Ubuntu 26.04 AMD64 host; target image identity verified as Ubuntu 26.04; ISO and checksum created; structural verifier passes; four firmware/medium smoke tests reach live userspace. Secure Boot remains separately gated.  
-**Next implementation tasks:** Fix Syslinux mode/theme compatibility; strengthen CI probe; run validation and ISO build; then QEMU matrix.
+**Next implementation tasks:** Complete full ISO build #54 using the Ubuntu APT pocket fix; resolve any observed failure; verify checksum/structure; then run the four QEMU BIOS/UEFI optical/USB cases.
 
 ## S02 — Shared operating-system foundation and services
 **Status: NOT STARTED**  
