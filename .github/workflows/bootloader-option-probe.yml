@@ -55,11 +55,11 @@ jobs:
           bash "$GITHUB_WORKSPACE/build/prepare-casper-syslinux-overlay.sh" "$probe_dir/live-build-overlay"
           export LIVE_BUILD="$probe_dir/live-build-overlay"
           test -x "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
-          grep -Fq 'binary/\${_NEXORA_INITRAMFS_DIR}/vmlinuz-*' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
-          grep -Fq '/\${_NEXORA_INITRAMFS_DIR}/vmlinuz' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq 'binary/${_NEXORA_INITRAMFS_DIR}/vmlinuz-*' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq '/${_NEXORA_INITRAMFS_DIR}/vmlinuz' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
           cat > "$LIVE_BUILD/scripts/build/lb_nexora_overlay_probe" <<'PROBE'
           #!/usr/bin/env bash
-          printf 'private-live-build-overlay-selected\\n'
+          printf 'private-live-build-overlay-selected\n'
           PROBE
           chmod 0755 "$LIVE_BUILD/scripts/build/lb_nexora_overlay_probe"
           lb_output="$(lb nexora_overlay_probe)"
