@@ -42,10 +42,11 @@ jobs:
           grep -Fq "[libutil.c32]" "$RUNNER_TEMP/vesamenu-dependencies.txt"
           grep -Fq "[libcom32.c32]" "$RUNNER_TEMP/vesamenu-dependencies.txt"
           lb --version
+          grep -nE 'rsvg|splash\.svg' /usr/lib/live/build/lb_binary_syslinux
           command -v rsvg-convert
           rsvg-convert --version
           printf '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#345678"/></svg>\n' > "$RUNNER_TEMP/nexora-rsvg-test.svg"
-          rsvg-convert --format png --height 8 --width 8 "$RUNNER_TEMP/nexora-rsvg-test.svg" "$RUNNER_TEMP/nexora-rsvg-test.png"
+          rsvg-convert --format png --height 8 --width 8 "$RUNNER_TEMP/nexora-rsvg-test.svg" -o "$RUNNER_TEMP/nexora-rsvg-test.png"
           test -s "$RUNNER_TEMP/nexora-rsvg-test.png"
 
       - name: Validate Ubuntu Resolute suite, keyring, Casper and generic boot theme
