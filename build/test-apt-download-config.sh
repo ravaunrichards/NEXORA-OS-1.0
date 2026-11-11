@@ -20,7 +20,7 @@ apt-config -c "$CONFIG" dump > "$DUMP"
 for expected in \
   'Acquire::Retries "8";' \
   'Acquire::Retries::Delay "true";' \
-  'Acquire::Retries::Maximum "60";' \
+  'Acquire::Retries::Delay::Maximum "60";' \
   'Acquire::Retries::HandleRetryAfter "true";' \
   'Acquire::Queue-Mode "access";'; do
   grep -Fq "$expected" "$DUMP" || fail "APT configuration did not load expected setting: $expected"
