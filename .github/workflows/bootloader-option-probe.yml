@@ -64,7 +64,8 @@ jobs:
           grep -Fq 'binary/${_NEXORA_INITRAMFS_DIR}/vmlinuz-*' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
           grep -Fq '/${_NEXORA_INITRAMFS_DIR}/vmlinuz' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
           grep -Fq '/usr/bin/rsvg-convert' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
-          grep -Fq 'rsvg-convert --format png --height 480 --width 640' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq 'Chroot chroot "rsvg-convert --format png --height 480 --width 640 splash.svg -o splash.png"' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq 'rsvg-convert --format png --height 480 --width 640 "${_TARGET}/splash.svg" -o "${_TARGET}/splash.png"' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
           ! grep -Eq '(^|[^[:alnum:]_-])rsvg([^[:alnum:]_-]|$)' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
           cat > "$LIVE_BUILD/scripts/build/lb_nexora_overlay_probe" <<'PROBE'
           #!/usr/bin/env bash
