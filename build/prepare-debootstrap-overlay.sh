@@ -76,7 +76,6 @@ path.write_text(text[:start_match.start()] + block + text[end:], encoding="utf-8
 PY
 
 sh -n "$OUTPUT_DIR/functions" || fail "Patched debootstrap functions file does not parse."
-grep -Fq '"${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wrapper}"' "$OUTPUT_DIR/functions" && fail "Retry-wrapper template marker was not substituted."
 grep -Fq '"${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wrapper}"' "$OUTPUT_DIR/functions" || fail "Private retry-wrapper reference was not installed."
 [[ "$(grep -Fc '"${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wrapper}"' "$OUTPUT_DIR/functions")" == 2 ]] || fail "Expected both wget paths to use the private retry wrapper."
 printf 'Created private debootstrap overlay: %s\n' "$OUTPUT_DIR"
