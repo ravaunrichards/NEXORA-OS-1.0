@@ -22,8 +22,8 @@ All requirements from the NEXORA OS 1.0 product and engineering brief must map t
 - Resolve obsolete Syslinux theme/gfxboot package requests; explicitly verify bootloader configuration and live-build package/module behavior against Resolute.
 - Preserve Ubuntu APT pocket naming in generic mode: keep resolute-updates enabled using exported LB_UPDATES=true; disable only Debian-mode automatic security-source generation; add signed resolute-security from the selected snapshot for build time and security.ubuntu.com resolute-security for the installed OS.
 - Test the generated .list.chroot and .list.binary sources, the Ubuntu archive key path and the absence of the invalid resolute/updates suite.
-- Explicitly stage BIOS ISO boot assets into the local live-build configuration before `lb config`: templates from `/usr/share/live/build/bootloaders/isolinux`, `isolinux.bin` from package `isolinux`, and `vesamenu.c32` from package `syslinux-common`.
-- Install the `isolinux` and `syslinux-common` host packages explicitly; test the helper with synthetic files and probe the actual Resolute package file locations.
+- Explicitly stage BIOS ISO boot assets into the local live-build configuration before `lb config`: templates from `/usr/share/live/build/bootloaders/isolinux`, `isolinux.bin` from package `isolinux`, and the required BIOS modules `ldlinux.c32`, `libcom32.c32`, `libutil.c32` and `vesamenu.c32` from `syslinux-common`.
+- Install the `isolinux` and `syslinux-common` host packages explicitly; test every staged module with synthetic files and probe the actual Resolute package file locations.
 - Retain the explicit supported Ubuntu firmware metapackage; prevent legacy firmware auto-injection and outdated memtest filename assumptions.
 - Preserve Casper live boot, the Ubuntu kernel and the shared KDE Plasma base.
 - Resolve package manifest/dependency failures and any new errors from the actual build logs.
