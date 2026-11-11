@@ -1,6 +1,6 @@
 # NEXORA OS — blockers and external dependencies
 
-Last updated: 2026-11-11 (split Syslinux package assets staged; build #56 active and #58 queued)
+Last updated: 2026-11-11 (probe #38 and PR validation #262 passed; build #56 active and #58 queued)
 
 | ID | Status | Area | Blocker / evidence | Required action | Owner |
 |---|---|---|---|---|---|
