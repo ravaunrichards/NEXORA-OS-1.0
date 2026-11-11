@@ -36,6 +36,9 @@ grep -Fq '"${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wr
 [[ -s "$OVERLAY/scripts/resolute" ]]
 [[ -s "$OVERLAY/suites/resolute" ]]
 
+grep -Fq 'export DEBOOTSTRAP_DIR="$DEBOOTSTRAP_OVERLAY"' "$ROOT_DIR/build/build-iso.sh" || \
+  { printf 'ERROR: Build does not export its private debootstrap support directory.\n' >&2; exit 1; }
+
 # The package-owned source remains byte-for-byte unchanged.
 grep -Fq 'wget "$@" 2>&1 >/dev/null' "$SOURCE/functions"
 grep -Fq 'wget $QSWITCH "$@"' "$SOURCE/functions"
