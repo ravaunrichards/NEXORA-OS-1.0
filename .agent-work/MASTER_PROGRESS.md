@@ -41,14 +41,22 @@ Last updated: 2026-11-11 (Ubuntu archive-pocket fix; ISO build #54 active)
 
 ## Files changed in this execution checkpoint
 
-Created:
-- `.agent-work/PROJECT_IDENTITY.md`
-- `.agent-work/MASTER_PROGRESS.md`
-- `.agent-work/STAGE_QUEUE.md`
-- `.agent-work/DECISIONS.md`
-- `.agent-work/BLOCKERS.md`
+Added:
+- `build/configure-ubuntu-archives.sh` — creates build-time signed snapshot `resolute-security` and installed-system security-mirror sources.
+- `.agent-work` execution records were initially established during S00.
 
-No existing product files were overwritten in this checkpoint.
+Modified:
+- `build/build-iso.sh` — invokes Ubuntu archive helper; sets `LB_UPDATES=true`; disables only Debian-mode automatic security source generation.
+- `build/test-live-build-compatibility.sh` — validates Ubuntu pocket files, keyring path, helper arguments, generic live-build settings and update environment.
+- `build/validate-config.sh` — requires the new archive helper as a non-empty project file and validates scripts/tests.
+- `.github/workflows/bootloader-option-probe.yml` — verifies live-build options and generated Ubuntu archive sources.
+- `build/README.md` — documents correct Ubuntu Resolute security/update pocket handling.
+- `.agent-work/PROJECT_IDENTITY.md`, `MASTER_PROGRESS.md`, `STAGE_QUEUE.md`, `DECISIONS.md`, `BLOCKERS.md` — updated repository checkpoint, S01 queue, archive-pocket decision and active blockers.
+
+Removed:
+- None.
+
+No existing user files, ISO outputs, databases or repository history were deleted. Main was not modified and PR #5 was not merged.
 
 ## Tests and evidence
 
