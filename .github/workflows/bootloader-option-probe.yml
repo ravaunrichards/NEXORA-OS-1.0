@@ -31,7 +31,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           sudo apt-get update
-          sudo apt-get install -y live-build ubuntu-keyring isolinux syslinux-common binutils
+          sudo apt-get install -y live-build ubuntu-keyring isolinux syslinux-common binutils librsvg2-bin
           test -s /usr/share/keyrings/ubuntu-archive-keyring.gpg
           test -s /usr/lib/ISOLINUX/isolinux.bin
           test -s /usr/lib/syslinux/modules/bios/vesamenu.c32
@@ -42,6 +42,11 @@ jobs:
           grep -Fq "[libutil.c32]" "$RUNNER_TEMP/vesamenu-dependencies.txt"
           grep -Fq "[libcom32.c32]" "$RUNNER_TEMP/vesamenu-dependencies.txt"
           lb --version
+          command -v rsvg-convert
+          rsvg-convert --version
+          printf '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#345678"/></svg>\n' > "$RUNNER_TEMP/nexora-rsvg-test.svg"
+          rsvg-convert --format png --height 8 --width 8 "$RUNNER_TEMP/nexora-rsvg-test.svg" "$RUNNER_TEMP/nexora-rsvg-test.png"
+          test -s "$RUNNER_TEMP/nexora-rsvg-test.png"
 
       - name: Validate Ubuntu Resolute suite, keyring, Casper and generic boot theme
         shell: bash
@@ -57,6 +62,9 @@ jobs:
           test -x "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
           grep -Fq 'binary/${_NEXORA_INITRAMFS_DIR}/vmlinuz-*' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
           grep -Fq '/${_NEXORA_INITRAMFS_DIR}/vmlinuz' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq '/usr/bin/rsvg-convert' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq 'rsvg-convert --format png --height 480 --width 640' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          ! grep -Eq '(^|[^[:alnum:]_-])rsvg([^[:alnum:]_-]|$)' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
           cat > "$LIVE_BUILD/scripts/build/lb_nexora_overlay_probe" <<'PROBE'
           #!/usr/bin/env bash
           printf 'private-live-build-overlay-selected\n'
