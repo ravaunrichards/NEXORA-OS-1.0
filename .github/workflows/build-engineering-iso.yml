@@ -17,6 +17,10 @@ on:
       - "build/add-uefi-boot.sh"
       - "build/test-add-uefi-boot.sh"
       - "build/patch-debootstrap-download-retries.sh"
+      - "build/prepare-debootstrap-overlay.sh"
+      - "build/test-debootstrap-overlay.sh"
+      - "build/apt-download.conf"
+      - "build/test-apt-download-config.sh"
       - "build/test-download-retry-wrapper.sh"
       - "build/packages/**"
   workflow_dispatch:
