@@ -33,6 +33,9 @@ jobs:
           test -s /usr/share/keyrings/ubuntu-archive-keyring.gpg
           test -s /usr/lib/ISOLINUX/isolinux.bin
           test -s /usr/lib/syslinux/modules/bios/vesamenu.c32
+          test -s /usr/lib/syslinux/modules/bios/ldlinux.c32
+          test -s /usr/lib/syslinux/modules/bios/libcom32.c32
+          test -s /usr/lib/syslinux/modules/bios/libutil.c32
           lb --version
 
       - name: Validate Ubuntu Resolute suite, keyring, Casper and generic boot theme
@@ -45,6 +48,9 @@ jobs:
           bash "$GITHUB_WORKSPACE/build/prepare-syslinux-bootloaders.sh" "$probe_dir/config"
           test -s "$probe_dir/config/bootloaders/isolinux/isolinux.bin"
           test -s "$probe_dir/config/bootloaders/isolinux/vesamenu.c32"
+          test -s "$probe_dir/config/bootloaders/isolinux/ldlinux.c32"
+          test -s "$probe_dir/config/bootloaders/isolinux/libcom32.c32"
+          test -s "$probe_dir/config/bootloaders/isolinux/libutil.c32"
           live_args="boot=casper console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console"
           export LB_UPDATES=true
 
