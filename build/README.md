@@ -59,3 +59,7 @@ For every candidate, retain:
 - later, installer and physical-hardware test records.
 
 Do not call the image reproducible or release-ready based on configuration alone. A successful clean build and repeat-build comparison are still outstanding.
+
+## Ubuntu security pocket handling
+
+Live-build's generic Debian mode constructs Debian-style security pocket names such as `resolute/updates`, which Ubuntu does not publish. The builder therefore disables only live-build's automatic Debian-style security-source generation and adds Ubuntu's actual `resolute-security` pocket explicitly through `build/configure-ubuntu-archives.sh`. During image construction, this source uses the selected dated Ubuntu snapshot and the Ubuntu archive keyring, preserving signed snapshot package metadata. The generated runtime APT source uses `https://security.ubuntu.com/ubuntu/` with the `resolute-security` pocket so installed systems can receive security updates. The ordinary `resolute-updates` pocket remains enabled from the pinned snapshot during construction. Regression coverage validates both source definitions and rejects the invalid `resolute/updates` suite.
