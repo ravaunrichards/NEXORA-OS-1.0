@@ -1,6 +1,6 @@
 # NEXORA OS — blockers and external dependencies
 
-Last updated: 2026-11-11 (after probe run #8 diagnosis)
+Last updated: 2026-11-11 (after probe run #10 diagnosis)
 
 | ID | Status | Area | Blocker / evidence | Required action | Owner |
 |---|---|---|---|---|---|
@@ -17,7 +17,7 @@ Last updated: 2026-11-11 (after probe run #8 diagnosis)
 ## Resolved or progressed issues
 
 - The snapshot package-index download problem discovered on main build #42 has an active correction in PR #5. Validation #159 passed; latest validation #170 also passes after syntax/YAML/regression-test repairs. This is progress, not a completed ISO build and not a merged fix.
-- The malformed rootfs-verification shell block, malformed probe-workflow YAML artifact path, and fragile live-build option test were corrected on the PR branch. Repository validation #170 passed. Live-build probe #8 then exposed a new workflow-only defect: its dump target collided with the `config/` directory created by `lb config`. The dump path is now `config-dump.txt` (commit `a9aaf1a74189293e80ff7cc43fc07750319a2d3f`). Probe #10 and full ISO build #48 are being rerun against the corrected configuration. Do not resolve B01/B05 until real ISO and boot acceptance pass.
+- The malformed rootfs-verification shell block, malformed probe-workflow YAML artifact path, and fragile live-build option test were corrected. Repository validation #170 passed. Probe #8 exposed a dump-target collision; fixed by using `config-dump.txt` in commit `a9aaf1a74189293e80ff7cc43fc07750319a2d3f`. Probe #10 showed that live-build dump lines include source-file prefixes, so the original anchored assertions failed. An intermediate regex edit malformed the workflow YAML and was caught by validation #181/#182; the entire workflow was rewritten cleanly with prefix-aware assertions in commit `c0a73dd243fd126e2c633131c56eccb500b462a7`. Repository validation #183 passed. Probe #12 is running/queued; full ISO build #48 is still running after its host preflight passed. Do not resolve B01/B05 until a real ISO, checksum, structure and four firmware/medium boot tests pass.
 - Earlier obsolete firmware auto-injection and removed memtest filename issues have targeted regression checks; later full-build evidence must still confirm downstream stages.
 
 ## Blocker policy
