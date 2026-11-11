@@ -8,6 +8,8 @@ on:
       - "build/test-live-build-compatibility.sh"
       - "build/configure-ubuntu-archives.sh"
       - "build/prepare-syslinux-bootloaders.sh"
+      - "build/prepare-casper-syslinux-overlay.sh"
+      - "build/test-casper-syslinux-overlay.sh"
       - "build/test-syslinux-bootloader-staging.sh"
   workflow_dispatch:
 
@@ -50,6 +52,18 @@ jobs:
           cd "$probe_dir"
           bash "$GITHUB_WORKSPACE/build/prepare-syslinux-bootloaders.sh" "$probe_dir/config"
           test -s "$probe_dir/config/bootloaders/isolinux/isolinux.bin"
+          bash "$GITHUB_WORKSPACE/build/prepare-casper-syslinux-overlay.sh" "$probe_dir/live-build-overlay"
+          export LIVE_BUILD="$probe_dir/live-build-overlay"
+          test -x "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq 'binary/\${_NEXORA_INITRAMFS_DIR}/vmlinuz-*' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq '/\${_NEXORA_INITRAMFS_DIR}/vmlinuz' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          cat > "$LIVE_BUILD/scripts/build/lb_nexora_overlay_probe" <<'PROBE'
+          #!/usr/bin/env bash
+          printf 'private-live-build-overlay-selected\\n'
+          PROBE
+          chmod 0755 "$LIVE_BUILD/scripts/build/lb_nexora_overlay_probe"
+          lb_output="$(lb nexora_overlay_probe)"
+          grep -Fq 'private-live-build-overlay-selected' <<< "$lb_output"
           test -s "$probe_dir/config/bootloaders/isolinux/vesamenu.c32"
           test -s "$probe_dir/config/bootloaders/isolinux/ldlinux.c32"
           test -s "$probe_dir/config/bootloaders/isolinux/libcom32.c32"
