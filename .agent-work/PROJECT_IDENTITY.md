@@ -15,7 +15,7 @@ Last verified: 2026-11-11 (repository and PR head rechecked)
 - Main baseline commit: `d8b2085122e094b514caf803921385d57ec435f7`
 - Active branch baseline commit: `366d0ab2330725a55682906c01303b53815c526d`
 - Active branch baseline tree fingerprint: `c21dd86adafee0a53dcd548688cb07ebeae762f6`
-- Current active PR branch HEAD at identity read-back: `88a08307ba6f8c0218b55b9dcd1fe31ae93200dd`.
+- Current active PR branch HEAD at identity read-back: `92134dfe03ea1fd512e0b948e87ad960d728733a`.
 - Latest implementation commit with full repository validation: `d34a114f0cb1334a77025bc7a23d88ee90b41a24` (run #176 was running at last check; #174 passed on the preceding workflow-only fix).
 - Visibility: public
 - Archived: no
