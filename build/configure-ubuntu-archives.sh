@@ -6,8 +6,8 @@ fail() {
   exit 1
 }
 
-CONFIG_DIR="\${1:-}"
-SNAPSHOT="\${2:-}"
+CONFIG_DIR="$1"
+SNAPSHOT="$2"
 
 [[ -n "$CONFIG_DIR" ]] || fail "Usage: $0 CONFIG_DIR YYYYMMDDTHHMMSSZ"
 [[ "$SNAPSHOT" =~ ^[0-9]{8}T[0-9]{6}Z$ ]] || fail "Snapshot must use YYYYMMDDTHHMMSSZ format."
