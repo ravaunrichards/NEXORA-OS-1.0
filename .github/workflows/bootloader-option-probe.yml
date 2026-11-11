@@ -29,8 +29,10 @@ jobs:
         run: |
           set -Eeuo pipefail
           sudo apt-get update
-          sudo apt-get install -y live-build ubuntu-keyring
+          sudo apt-get install -y live-build ubuntu-keyring isolinux syslinux-common
           test -s /usr/share/keyrings/ubuntu-archive-keyring.gpg
+          test -s /usr/lib/ISOLINUX/isolinux.bin
+          test -s /usr/lib/syslinux/modules/bios/vesamenu.c32
           lb --version
 
       - name: Validate Ubuntu Resolute suite, keyring, Casper and generic boot theme
