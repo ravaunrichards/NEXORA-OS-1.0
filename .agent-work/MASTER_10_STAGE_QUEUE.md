@@ -30,7 +30,7 @@ Scope:
 Exit criteria:
 A clean full ISO build succeeds; target identity, ISO structure and checksum verify; all four BIOS/UEFI optical/USB smoke tests reach live userspace for the exact artifact.
 
-Current evidence (2026-11-11, refreshed 09:55 UTC):
+Current evidence (2026-11-11, refreshed 10:08 UTC):
 - Repository validation #317 and #318 passed on the latest PR branch head `e7bb3666fc4613a0dc1b1167a4dde45b5dfe2946`; validation #318 explicitly reports the Casper/Syslinux compatibility overlay regression passed and the original source package file preserved.
 - Ubuntu live-build probe #59 passed on the same latest head. It installs the actual Ubuntu Resolute live-build and `librsvg2-bin` packages, executes a real SVG-to-PNG conversion, checks the overlay's exact chroot and host `rsvg-convert ... -o OUTPUT` commands, stages BIOS boot assets, creates the private overlay and confirms that `lb` dispatches the private override.
 - Probe logs confirmed the installed Ubuntu live-build script still checks `/usr/bin/rsvg` and invokes `rsvg` in both chroot and host branches, while Resolute's `librsvg2-bin` supplies `/usr/bin/rsvg-convert`. The private overlay now rewrites the dependency check and both invocations to `rsvg-convert`, converts the old positional output form to `-o OUTPUT`, and leaves the packaged script untouched. The regression fixture verifies both converted command forms.
