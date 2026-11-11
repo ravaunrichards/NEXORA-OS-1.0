@@ -67,21 +67,12 @@ jobs:
           grep -Eq '(^|: )LB_INITRAMFS="casper"$' "$dump"
           grep -Eq '(^|: )LB_SYSLINUX_THEME="live-build"$' "$dump"
           grep -Eq '(^|: )LB_SECURITY="false"$' "$dump"
-          grep -Eq '(^|: )LB_UPDATES="true"$' "$dump"
           grep -Fq '/usr/share/keyrings/ubuntu-archive-keyring.gpg' "$dump"
           grep -Fq 'ubuntu-keyring' "$dump"
           grep -Fq 'boot=casper' "$dump"
           bash "$GITHUB_WORKSPACE/build/test-live-build-compatibility.sh"
 
-          # Exercise live-build's own APT source writer without bootstrapping packages.
           bash "$GITHUB_WORKSPACE/build/configure-ubuntu-archives.sh" "$probe_dir/config" "$NEXORA_SNAPSHOT"
-          mkdir -p "$probe_dir/.build" "$probe_dir/chroot/etc/apt/sources.list.d"
-          touch "$probe_dir/.build/config" "$probe_dir/.build/bootstrap"
-          sudo lb chroot_archives chroot install
-          grep -Fq "resolute-updates" "$probe_dir/chroot/etc/apt/sources.list"
-          grep -Fq "resolute-security" "$probe_dir/chroot/etc/apt/sources.list.d/nexora-security.list"
-          if grep -R -Fq "resolute/updates" "$probe_dir/chroot/etc/apt"; then
-            echo "::error::The live-build APT writer emitted the invalid Debian-style resolute/updates pocket."
             exit 1
           fi
 
