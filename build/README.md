@@ -60,6 +60,10 @@ For every candidate, retain:
 
 Do not call the image reproducible or release-ready based on configuration alone. A successful clean build and repeat-build comparison are still outstanding.
 
+## ISOLINUX boot-asset staging
+
+Ubuntu's live-build package ships the `isolinux.bin` and `vesamenu.c32` files in `/usr/share/live/build/bootloaders/isolinux`. The ISO build stages that complete package-provided directory into `config/bootloaders/isolinux` before running `lb config`. This intentionally selects live-build's documented local bootloader override path, avoiding an incomplete pre-existing directory being preferred over the packaged source. The staging helper fails closed if either required binary is missing, and its regression test checks exact staged file content. The live-build CI probe also checks the installed package's real source directory.
+
 ## Ubuntu security pocket handling
 
 Live-build's generic Debian mode constructs Debian-style security pocket names such as `resolute/updates`, which Ubuntu does not publish. The builder therefore disables only live-build's automatic Debian-style security-source generation and adds Ubuntu's actual `resolute-security` pocket explicitly through `build/configure-ubuntu-archives.sh`. During image construction, this source uses the selected dated Ubuntu snapshot and the Ubuntu archive keyring, preserving signed snapshot package metadata. The generated runtime APT source uses `https://security.ubuntu.com/ubuntu/` with the `resolute-security` pocket so installed systems can receive security updates. The ordinary `resolute-updates` pocket remains enabled from the pinned snapshot during construction. Regression coverage validates both source definitions and rejects the invalid `resolute/updates` suite.
