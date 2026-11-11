@@ -91,6 +91,7 @@ cd "$WORK_DIR"
 mkdir -p config/package-lists config/includes.chroot config/archives
 cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
 cp -a "$ROOT_DIR/installer/includes.chroot/." config/includes.chroot/
+bash "$ROOT_DIR/build/prepare-syslinux-bootloaders.sh" config
 bash "$ROOT_DIR/build/configure-ubuntu-archives.sh" config "$SNAPSHOT"
 
 {
