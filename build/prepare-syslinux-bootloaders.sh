@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 fail() {
-  printf 'ERROR: %s\\n' "$*" >&2
+  printf 'ERROR: %s\n' "$*" >&2
   exit 1
 }
 
@@ -25,4 +25,4 @@ for required in isolinux.bin vesamenu.c32; do
   [[ -s "$TARGET_DIR/$required" ]] || fail "Could not stage required Syslinux boot asset: $TARGET_DIR/$required"
 done
 
-printf 'Staged live-build ISOLINUX assets into %s\\n' "$TARGET_DIR"
+printf 'Staged live-build ISOLINUX assets into %s\n' "$TARGET_DIR"
