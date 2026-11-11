@@ -129,19 +129,22 @@ if [[ "$index_url_index" -ge 0 ]]; then
   exit "$last_status"
 fi
 
-# Keep bounded retries for metadata and non-package wget requests. These
-# requests are not rewritten, so package selection remains pinned.
+# Keep signed metadata on the exact selected snapshot. Retry transport
+# failures more generously, but never redirect Release/InRelease/Release.gpg
+# to a live archive or weaken signature verification.
 last_status=1
-for attempt in 1 2 3 4; do
-  if "$REAL_WGET" "$@"; then
+for attempt in 1 2 3 4 5 6 7 8; do
+  if "$REAL_WGET" --timeout=45 --tries=1 "$@"; then
     exit 0
   else
     last_status=$?
   fi
 
-  if [[ "$attempt" -lt 4 ]]; then
-    log_message "NEXORA downloader: retrying failed metadata request (attempt $attempt of 4)"
-    sleep "$attempt"
+  if [[ "$attempt" -lt 8 ]]; then
+    delay="$attempt"
+    if (( delay > 20 )); then delay=20; fi
+    log_message "NEXORA downloader: retrying pinned signed-metadata request (attempt $attempt of 8)"
+    sleep "$delay"
   fi
 done
 
