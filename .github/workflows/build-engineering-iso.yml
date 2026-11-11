@@ -1,4 +1,5 @@
 name: Build NEXORA engineering ISO
+# Isolated Stage 1 acceptance branch: separate ref concurrency keeps this clean build independent of earlier stalled PR-branch runs.
 
 on:
   push:
