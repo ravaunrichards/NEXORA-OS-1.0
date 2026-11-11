@@ -81,6 +81,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: NEXORA-ubuntu-live-build-config
-          path: ${{ runner.temp }}/nexora-lb-probe/
+          path: "${{ runner.temp }}/nexora-lb-probe/"
           if-no-files-found: warn
           retention-days: 14
