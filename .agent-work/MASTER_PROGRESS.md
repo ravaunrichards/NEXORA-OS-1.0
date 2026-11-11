@@ -15,7 +15,7 @@ Last updated: 2026-11-10 (latest CI checkpoint)
 - **Current task:** Remove the Ubuntu Resolute live-build Syslinux legacy-theme dependency without changing the Ubuntu 26.04 target; verify the resulting mode, suite, keyring, Casper initramfs, and target release in CI.
 - **Execution branch:** `fix/snapshot-package-index-fallback`.
 - **Open pull request:** [#5](https://github.com/ravaunrichards/NEXORA-OS-1.0/pull/5).
-- **Latest verified active branch HEAD:** `b70a27e5fa9c2f37a4ec3fec1c63e2838ded4604`.
+- **Latest implementation commit validated by Actions run #170:** `b70a27e5fa9c2f37a4ec3fec1c63e2838ded4604` (later commits on this branch update execution records only).
 - **Baseline commit for the active PR branch:** `366d0ab2330725a55682906c01303b53815c526d`.
 - **Last verified main commit:** `d8b2085122e094b514caf803921385d57ec435f7`.
 - **Last completed action:** Repaired the corrupted post-build root-filesystem verification/ISO assembly block in `build/build-iso.sh`, rebuilt the live-build probe workflow as valid YAML, and hardened the live-build regression test. GitHub Actions validation run #170 passed all repository checks on `b70a27e5fa9c2f37a4ec3fec1c63e2838ded4604`.
