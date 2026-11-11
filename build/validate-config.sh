@@ -62,6 +62,8 @@ required_files=(
   "$ROOT_DIR/build/README.md"
   "$ROOT_DIR/build/build-iso.sh"
   "$ROOT_DIR/build/configure-ubuntu-archives.sh"
+  "$ROOT_DIR/build/prepare-syslinux-bootloaders.sh"
+  "$ROOT_DIR/build/test-syslinux-bootloader-staging.sh"
   "$ROOT_DIR/build/verify-iso.sh"
   "$ROOT_DIR/build/patch-debootstrap-download-retries.sh"
   "$ROOT_DIR/build/test-download-retry-wrapper.sh"
@@ -100,6 +102,7 @@ RUBY
 bash "$ROOT_DIR/build/test-download-retry-wrapper.sh"
 bash "$ROOT_DIR/build/test-firmware-selection.sh"
 bash "$ROOT_DIR/build/test-live-build-compatibility.sh"
+bash "$ROOT_DIR/build/test-syslinux-bootloader-staging.sh"
 bash "$ROOT_DIR/build/test-qemu-live-boot.sh"
 bash "$ROOT_DIR/installer/test-config.sh"
 
