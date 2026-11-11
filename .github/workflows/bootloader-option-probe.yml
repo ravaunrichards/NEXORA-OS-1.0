@@ -52,8 +52,8 @@ jobs:
             --initramfs casper \
             --initsystem systemd \
             --memtest none \
-            --security false \\
-            --updates true \\
+            --security false \
+            --updates true \
             --bootappend-live "$live_args" \
             --archive-areas "main restricted universe multiverse" \
             --parent-archive-areas "main restricted universe multiverse"
