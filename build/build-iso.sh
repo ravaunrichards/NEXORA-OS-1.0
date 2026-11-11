@@ -110,7 +110,7 @@ bash "$ROOT_DIR/build/configure-ubuntu-archives.sh" config "$SNAPSHOT"
 # Oneiric Syslinux/gfxboot packages. Use generic integration while explicitly
 # pinning Ubuntu suites, trust roots, archive areas, mirrors and Casper.
 
-# live-build reads updates-pocket enablement from LB_UPDATES, not an --updates CLI flag.
+# live-build reads updates-pocket enablement from the LB_UPDATES environment variable.
 export LB_UPDATES=true
 lb config \
   --mode debian \
