@@ -30,12 +30,14 @@ Scope:
 Exit criteria:
 A clean full ISO build succeeds; target identity, ISO structure and checksum verify; all four BIOS/UEFI optical/USB smoke tests reach live userspace for the exact artifact.
 
-Current evidence (2026-11-11, refreshed 05:27 UTC):
-- Repository validation #273 passed on PR #5 head `7bd45ade48df1814021ebfc66339db5a0fbf1aad`.
-- Ubuntu live-build configuration probe #42 passed on the same head.
-- Full build #56 is still `in_progress` after 58 minutes; its only active step is **Build NEXORA engineering ISO**. Host/dependency preflight passed. The workflow's timeout is 180 minutes. GitHub has not published downloadable job logs or artifacts; the artifact upload step remains pending.
-- Full build #60 is still `pending` behind the branch concurrency group. Its source SHA is `21a71dcef613804887c9a2c624baa47d3240fd67`; do not launch another competing build.
-- The firmware test workflow is configured to auto-run after a successful same-repository ISO build and checks the exact artifact SHA-256 and ISO structure before four QEMU BIOS/UEFI optical/USB boots.
+Current evidence (2026-11-11, refreshed 06:30 UTC):
+- Repository validation #285 passed on commit `a1348d1e294833c40bd9a17f2a4b68e0f5a62ab3`. It validates the manifest, all shell/YAML files, existing regressions, and the new Casper/Syslinux private-overlay test. The test confirms the source package script is not changed.
+- Ubuntu live-build configuration probe #45 passed on commit `d2ce1d8ffa201c1fc05a611c7da6b8723c8df753`. It builds the private overlay, confirms its kernel/initrd path rewrite, and proves `lb` selects the overlay script.
+- Root cause from failed builds #56 and #60: Ubuntu live-build had staged the kernel under Casper, while its packaged Syslinux stage still searched for `binary/live/vmlinuz-*`. Both attempts failed at that mismatch after package installation; neither produced an ISO.
+- A compatibility overlay is now created inside each temporary build workspace. It overrides only the Syslinux stage script, rewrites its paths to the configured initramfs directory, preserves the distribution's bootloader templates, and does not modify installed system files.
+- Full build #61 is `in_progress` on commit `e45444e910673a8a0c264caabaa68f187bfc6ba2`; host/dependency preflight passed and the build step is running. Job logs/artifact are not yet downloadable.
+- Full build #62 is queued behind #61 on commit `5fdd0d17dd9c8da47c1c38c2c4f6c830c05f6ae5`. Do not start another competing full build.
+- After an ISO succeeds, the firmware workflow must still verify the exact artifact SHA-256/structure and all four BIOS/UEFI optical/USB boots.
 - No ISO artifact, checksum, or real-image boot result has been verified. Therefore Stage 1 remains IN PROGRESS; Stages 2–10 remain QUEUED.
 
 ### STAGE 2 — Shared core operating system and system integration
@@ -106,10 +108,10 @@ Exit criteria: every mandatory release check passes on a named commit and signed
 - Active stage: Stage 1 — Bootable build foundation.
 - Active product code branch: `fix/snapshot-package-index-fallback`.
 - Open integration PR: [PR #5](https://github.com/ravaunrichards/NEXORA-OS-1.0/pull/5).
-- Latest verified active PR head at checkpoint: `7bd45ade48df1814021ebfc66339db5a0fbf1aad`.
-- Latest successful lightweight checks: repository validation #273 and Ubuntu live-build probe #42.
-- Long builds: #56 is reported in progress; #60 is queued. Do not start another full ISO build while either occupies the branch's build concurrency group.
-- Immediate next action: refresh #56/#60; inspect the completed build log/artifact for the exact next failure or success; fix only evidence-backed problems; then verify the real image and run its four firmware/media boots.
+- Latest verified PR head at checkpoint: `a1348d1e294833c40bd9a17f2a4b68e0f5a62ab3`.
+- Latest successful lightweight checks: repository validation #285 and Ubuntu live-build probe #45.
+- Long builds: #61 is in progress; #62 is queued. Do not start another full ISO build while either occupies the branch's build concurrency group.
+- Immediate next action: refresh #61/#62; inspect the build log/artifact for success or the exact next failure; fix only evidence-backed problems; then verify the real image and run its four firmware/media boots.
 - Main remains unchanged at `d8b2085122e094b514caf803921385d57ec435f7`.
 - No license or main-branch protection setting has been changed; both require owner decisions/actions.
 
