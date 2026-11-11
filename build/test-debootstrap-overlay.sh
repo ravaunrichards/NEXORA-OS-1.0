@@ -11,7 +11,8 @@ OVERLAY="$TMP_ROOT/private-overlay"
 mkdir -p "$SOURCE/scripts" "$SOURCE/suites"
 cat > "$SOURCE/functions" <<'FIXTURE'
 #!/bin/sh
-wgetprogress () {
+  wgetprogress ()
+  {
  [ ! "$VERBOSE" ] && NVSWITCH="-nv"
  local ret=0
  if [ "$USE_DEBIANINSTALLER_INTERACTION" ] && [ "$PROGRESS_NEXT" ]; then
