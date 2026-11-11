@@ -7,6 +7,8 @@ on:
       - "build/build-iso.sh"
       - "build/test-live-build-compatibility.sh"
       - "build/configure-ubuntu-archives.sh"
+          grep -Fq "resolute-security" "$probe_dir/config/archives/nexora-security.list.chroot"
+          grep -Fq "resolute-security" "$probe_dir/config/archives/nexora-security.list.binary"
   workflow_dispatch:
 
 permissions:
@@ -73,8 +75,8 @@ jobs:
           bash "$GITHUB_WORKSPACE/build/test-live-build-compatibility.sh"
 
           bash "$GITHUB_WORKSPACE/build/configure-ubuntu-archives.sh" "$probe_dir/config" "$NEXORA_SNAPSHOT"
-            exit 1
-          fi
+          grep -Fq "resolute-security" "$probe_dir/config/archives/nexora-security.list.chroot"
+          grep -Fq "resolute-security" "$probe_dir/config/archives/nexora-security.list.binary"
 
           {
             echo "## NEXORA Ubuntu-targeted live-build configuration"
