@@ -12,13 +12,13 @@ mkdir -p "$SOURCE/scripts" "$SOURCE/suites"
 cat > "$SOURCE/functions" <<'FIXTURE'
 #!/bin/sh
 wgetprogress () {
- [ ! "$VERBOSE" ] && QSWITCH="-q"
+ [ ! "$VERBOSE" ] && NVSWITCH="-nv"
  local ret=0
  if [ "$USE_DEBIANINSTALLER_INTERACTION" ] && [ "$PROGRESS_NEXT" ]; then
  wget "$@" 2>&1 >/dev/null | $PKGDETAILS "WGET%" $PROGRESS_NOW $PROGRESS_NEXT $PROGRESS_END >&3
  ret=$?
  else
- wget $QSWITCH "$@"
+ wget $NVSWITCH "$@"
  ret=$?
  fi
  return $ret
@@ -32,7 +32,7 @@ bash "$HELPER" "$OVERLAY" "$SOURCE"
 PATCHED="$OVERLAY/functions"
 sh -n "$PATCHED"
 grep -Fq '"${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wrapper}" "$@" 2>&1 >/dev/null' "$PATCHED"
-grep -Fq '"${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wrapper}" $QSWITCH "$@"' "$PATCHED"
+[[ "$(grep -Fc '"${NEXORA_RETRY_WGET:?NEXORA_RETRY_WGET must name the private retry wrapper}"' "$PATCHED")" == 2 ]]
 [[ -s "$OVERLAY/scripts/resolute" ]]
 [[ -s "$OVERLAY/suites/resolute" ]]
 
@@ -41,7 +41,7 @@ grep -Fq 'export DEBOOTSTRAP_DIR="$DEBOOTSTRAP_OVERLAY"' "$ROOT_DIR/build/build-
 
 # The package-owned source remains byte-for-byte unchanged.
 grep -Fq 'wget "$@" 2>&1 >/dev/null' "$SOURCE/functions"
-grep -Fq 'wget $QSWITCH "$@"' "$SOURCE/functions"
+grep -Fq 'wget $NVSWITCH "$@"' "$SOURCE/functions"
 ! grep -Fq 'NEXORA_RETRY_WGET' "$SOURCE/functions"
 
 # The helper must fail closed instead of overwriting an existing overlay.
