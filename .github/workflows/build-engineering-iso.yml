@@ -5,6 +5,10 @@ on:
     paths:
       - ".github/workflows/build-engineering-iso.yml"
       - "build/build-iso.sh"
+      - "build/configure-ubuntu-archives.sh"
+      - "build/prepare-syslinux-bootloaders.sh"
+      - "build/test-syslinux-bootloader-staging.sh"
+      - "build/validate-config.sh"
       - "build/add-uefi-boot.sh"
       - "build/test-add-uefi-boot.sh"
       - "build/patch-debootstrap-download-retries.sh"
@@ -61,7 +65,7 @@ jobs:
 
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux
+            live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux syslinux-common
 
           for command_name in lb debootstrap mksquashfs unsquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find; do
             command -v "$command_name" >/dev/null 2>&1 || {
