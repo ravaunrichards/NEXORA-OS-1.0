@@ -88,6 +88,7 @@ printf 'Exact-path package/index transport fallback: %s\n' "$NEXORA_ARCHIVE_MIRR
 printf 'Private downloader: %s\n' "$(command -v wget)"
 
 cd "$WORK_DIR"
+mkdir -p config/package-lists config/includes.chroot config/archives
 mkdir -p config/package-lists config/includes.chroot
 cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
 cp -a "$ROOT_DIR/installer/includes.chroot/." config/includes.chroot/
@@ -99,6 +100,7 @@ cp -a "$ROOT_DIR/installer/includes.chroot/." config/includes.chroot/
   printf 'Ubuntu snapshot metadata: %s\n' "$SNAPSHOT"
   printf 'Package/index transport fallback: %s (exact relative path; debootstrap validates pinned checksum and size)\n' "$ARCHIVE_MIRROR"
   printf 'Live-build integration: generic tooling with Ubuntu Resolute suite and Casper explicitly pinned\n'
+  printf 'Ubuntu security pocket: resolute-security (signed snapshot metadata)\\n'
   printf 'Ubuntu bootstrap keyring: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n'
   printf 'Repository commit: %s\n' "$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf unknown)"
   printf 'Started UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -128,12 +130,8 @@ lb config \
   --parent-mirror-bootstrap "$SNAPSHOT_MIRROR" \
   --mirror-chroot "$SNAPSHOT_MIRROR" \
   --parent-mirror-chroot "$SNAPSHOT_MIRROR" \
-  --mirror-chroot-security "$SNAPSHOT_MIRROR" \
-  --parent-mirror-chroot-security "$SNAPSHOT_MIRROR" \
   --mirror-binary "https://archive.ubuntu.com/ubuntu" \
   --parent-mirror-binary "https://archive.ubuntu.com/ubuntu" \
-  --mirror-binary-security "https://security.ubuntu.com/ubuntu" \
-  --parent-mirror-binary-security "https://security.ubuntu.com/ubuntu" \
   --checksums sha256 \
   --apt-recommends true \
   --apt-secure true \
