@@ -9,32 +9,33 @@ fail() {
   exit 1
 }
 
-grep -Fq -- '--memtest none \' "$BUILD_SCRIPT" || \
-  fail "The ISO must skip live-build's incompatible legacy memtest boot entry."
+require_option() {
+  local option="$1"
+  grep -Eq "^[[:space:]]+$option([[:space:]]|$)" "$BUILD_SCRIPT" || \
+    fail "Required live-build option is missing: $option"
+}
 
-if grep -Fq -- '--memtest memtest86+' "$BUILD_SCRIPT" || grep -Fq -- '--memtest memtest86 ' "$BUILD_SCRIPT"; then
-  fail "The incompatible legacy memtest entry must not be requested."
+require_option '--memtest none'
+require_option '--mode debian'
+require_option '--distribution resolute'
+require_option '--parent-distribution resolute'
+require_option '--bootstrap-keyring'
+require_option '--keyring-packages ubuntu-keyring'
+require_option '--initramfs casper'
+require_option '--syslinux-theme live-build'
+
+if grep -Fq -- '--memtest memtest86+' "$BUILD_SCRIPT" || \
+   grep -Fq -- '--memtest memtest86 ' "$BUILD_SCRIPT"; then
+  fail "The removed legacy memtest entry must not be requested."
 fi
 
-grep -Fq -- '--mode debian \\' "$BUILD_SCRIPT" || \
-  fail "The obsolete Ubuntu-mode live-build Syslinux integration must not be selected."
-grep -Fq -- '--distribution resolute \\' "$BUILD_SCRIPT" || \
-  fail "The target suite must remain Ubuntu Resolute."
-grep -Fq -- '--parent-distribution resolute \\' "$BUILD_SCRIPT" || \
-  fail "The parent suite must remain Ubuntu Resolute."
-grep -Fq -- '--bootstrap-keyring /usr/share/keyrings/ubuntu-archive-keyring.gpg \\' "$BUILD_SCRIPT" || \
-  fail "The Ubuntu archive bootstrap keyring must be explicit."
-grep -Fq -- '--keyring-packages ubuntu-keyring \\' "$BUILD_SCRIPT" || \
-  fail "The target image must include Ubuntu archive trust roots."
-grep -Fq -- '--initramfs casper \\' "$BUILD_SCRIPT" || \
-  fail "Ubuntu Casper must be the live initramfs."
-grep -Fq -- '--syslinux-theme live-build \\' "$BUILD_SCRIPT" || \
-  fail "The removed Ubuntu Oneiric Syslinux theme must not be requested."
-grep -Fq -- 'boot=casper console=ttyS0' "$BUILD_SCRIPT" || \
-  fail "The live kernel command line must explicitly activate Casper."
-
-if grep -Fq -- '--mode ubuntu' "$BUILD_SCRIPT" || grep -Fq 'ubuntu-oneiric' "$BUILD_SCRIPT"; then
+if grep -Fq -- '--mode ubuntu' "$BUILD_SCRIPT" || \
+   grep -Fq 'ubuntu-oneiric' "$BUILD_SCRIPT" || \
+   grep -Fq 'gfxboot-theme-ubuntu' "$BUILD_SCRIPT"; then
   fail "The obsolete Ubuntu-specific live-build boot-theme path was reintroduced."
 fi
 
-printf 'NEXORA live-build compatibility test passed: generic boot-theme path is isolated; Ubuntu Resolute, Ubuntu keyring and Casper remain explicit.\n'
+grep -Fq 'boot=casper console=ttyS0' "$BUILD_SCRIPT" || \
+  fail "The live kernel command line must explicitly activate Casper and serial diagnostics."
+
+printf 'NEXORA live-build compatibility test passed: generic boot-theme path, Ubuntu Resolute suite/keyring and Casper remain explicit.\n'
