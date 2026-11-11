@@ -89,9 +89,9 @@ printf 'Private downloader: %s\n' "$(command -v wget)"
 
 cd "$WORK_DIR"
 mkdir -p config/package-lists config/includes.chroot config/archives
-mkdir -p config/package-lists config/includes.chroot
 cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
 cp -a "$ROOT_DIR/installer/includes.chroot/." config/includes.chroot/
+bash "$ROOT_DIR/build/configure-ubuntu-archives.sh" config "$SNAPSHOT"
 
 {
   printf 'NEXORA OS engineering ISO build\n'
@@ -135,7 +135,8 @@ lb config \
   --checksums sha256 \
   --apt-recommends true \
   --apt-secure true \
-  --security true \
+  --security false \\
+  --updates true \\
   --firmware-binary true \
   --firmware-chroot false \
   --debian-installer false \
