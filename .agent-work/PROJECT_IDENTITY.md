@@ -1,6 +1,6 @@
 # NEXORA OS — verified project identity
 
-Last verified: 2026-11-11 (repository, PR and Actions checkpoint rechecked)
+Last verified: 2026-11-11 (repository ID, main and PR #5 branch rechecked)
 
 ## Repository identity
 
@@ -15,9 +15,9 @@ Last verified: 2026-11-11 (repository, PR and Actions checkpoint rechecked)
 - Main baseline commit: `d8b2085122e094b514caf803921385d57ec435f7`
 - Active branch baseline commit: `366d0ab2330725a55682906c01303b53815c526d`
 - Active branch baseline tree fingerprint: `c21dd86adafee0a53dcd548688cb07ebeae762f6`
-- Latest verified active PR branch HEAD before this tracking update: `19a46bea5903d735b032f2c3dd4da5649a59df1a`.
-- Latest implementation commit with repository validation and live-build probe passing: `4e2d4144cc2d9be89b8d5414d1d12e8dc9211994` (run #231 and probe #29 passed; full ISO build #54 uses this implementation commit).
-- Commits after implementation commit `4e2d4144cc2d9be89b8d5414d1d12e8dc9211994` through branch head `19a46bea5903d735b032f2c3dd4da5649a59df1a` update execution records; no later product-code change is claimed.
+- Latest verified active PR branch HEAD before this tracking update: `65c64edfb47ac6f7666708d786d7755af65ac202`.
+- Latest Syslinux asset-staging implementation: `b8310f6f2f75806701a8264756e37a811292b8b2`; latest build workflow dependency/triggers update: `81aedf3d04f5fdeca2a4814c60a5cb2f47b6adc4`. The real-package probe #36 passed on `38e7eadd56dfd1e413f1ab3fbbd968edc9ed7544`; repository validation #257 passed on current branch head `65c64edfb47ac6f7666708d786d7755af65ac202`; probe #38 is running and ISO build #56 is active with #58 queued.
+- The later branch commits include Syslinux asset-source corrections, host dependency changes, probe and regression coverage, documentation, and formatting cleanup. Full ISO build #56 exercises the split-package asset path; build #58 is queued on the latest helper/test revision.
 - Visibility: public
 - Archived: no
 - Verified repository permissions: read, write, maintain and admin
