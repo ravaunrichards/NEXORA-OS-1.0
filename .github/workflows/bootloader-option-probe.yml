@@ -7,6 +7,8 @@ on:
       - "build/build-iso.sh"
       - "build/test-live-build-compatibility.sh"
       - "build/configure-ubuntu-archives.sh"
+      - "build/prepare-syslinux-bootloaders.sh"
+      - "build/test-syslinux-bootloader-staging.sh"
   workflow_dispatch:
 
 permissions:
@@ -38,6 +40,9 @@ jobs:
           probe_dir="$RUNNER_TEMP/nexora-lb-probe"
           mkdir -p "$probe_dir"
           cd "$probe_dir"
+          bash "$GITHUB_WORKSPACE/build/prepare-syslinux-bootloaders.sh" "$probe_dir/config"
+          test -s "$probe_dir/config/bootloaders/isolinux/isolinux.bin"
+          test -s "$probe_dir/config/bootloaders/isolinux/vesamenu.c32"
           live_args="boot=casper console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console"
           export LB_UPDATES=true
 
