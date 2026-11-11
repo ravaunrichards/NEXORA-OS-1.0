@@ -44,6 +44,16 @@ legacy_rsvg = re.compile(r"(?<![A-Za-z0-9_-])rsvg(?![A-Za-z0-9_-])")
 legacy_rsvg_count = len(legacy_rsvg.findall(source))
 if legacy_rsvg_count >= 2:
     source = legacy_rsvg.sub("rsvg-convert", source)
+    # The old rsvg CLI accepted INPUT OUTPUT; rsvg-convert uses INPUT -o OUTPUT.
+    source, converted_invocations = re.subn(
+        r'(rsvg-convert\\s+--format\\s+png\\s+--height\\s+480\\s+--width\\s+640\\s+)(?P<input>"[^"]+"|[^\\s"]+)\\s+(?P<output>"[^"]+"|[^\\s"]+)',
+        lambda match: match.group(1) + match.group("input") + " -o " + match.group("output"),
+        source,
+    )
+    if converted_invocations < 2:
+        raise SystemExit(
+            "Unsupported legacy Syslinux SVG renderer layout: expected both chroot and host output invocations."
+        )
 else:
     # Newer live-build revisions already use rsvg-convert. Accept that layout
     # unchanged, but fail closed if neither complete interface is present.
