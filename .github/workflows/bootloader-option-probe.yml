@@ -6,6 +6,7 @@ on:
       - ".github/workflows/bootloader-option-probe.yml"
       - "build/build-iso.sh"
       - "build/test-live-build-compatibility.sh"
+      - "build/configure-ubuntu-archives.sh"
   workflow_dispatch:
 
 permissions:
