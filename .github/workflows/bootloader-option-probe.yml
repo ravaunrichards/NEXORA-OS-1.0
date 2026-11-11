@@ -29,13 +29,16 @@ jobs:
         run: |
           set -Eeuo pipefail
           sudo apt-get update
-          sudo apt-get install -y live-build ubuntu-keyring isolinux syslinux-common
+          sudo apt-get install -y live-build ubuntu-keyring isolinux syslinux-common binutils
           test -s /usr/share/keyrings/ubuntu-archive-keyring.gpg
           test -s /usr/lib/ISOLINUX/isolinux.bin
           test -s /usr/lib/syslinux/modules/bios/vesamenu.c32
           test -s /usr/lib/syslinux/modules/bios/ldlinux.c32
           test -s /usr/lib/syslinux/modules/bios/libcom32.c32
           test -s /usr/lib/syslinux/modules/bios/libutil.c32
+          readelf -d /usr/lib/syslinux/modules/bios/vesamenu.c32 > "$RUNNER_TEMP/vesamenu-dependencies.txt"
+          grep -Fq "[libutil.c32]" "$RUNNER_TEMP/vesamenu-dependencies.txt"
+          grep -Fq "[libcom32.c32]" "$RUNNER_TEMP/vesamenu-dependencies.txt"
           lb --version
 
       - name: Validate Ubuntu Resolute suite, keyring, Casper and generic boot theme
