@@ -6,36 +6,46 @@ HELPER="$ROOT_DIR/build/prepare-syslinux-bootloaders.sh"
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/nexora-syslinux-stage.XXXXXX")"
 trap 'rm -rf -- "$TMP_ROOT"' EXIT
 
-SOURCE="$TMP_ROOT/source"
+TEMPLATES="$TMP_ROOT/templates"
+ISOLINUX_BIN="$TMP_ROOT/isolinux.bin"
+VESAMENU_C32="$TMP_ROOT/vesamenu.c32"
 CONFIG="$TMP_ROOT/config"
-mkdir -p "$SOURCE"
+mkdir -p "$TEMPLATES"
 
-printf 'synthetic-isolinux-binary\n' > "$SOURCE/isolinux.bin"
-printf 'synthetic-vesamenu-module\n' > "$SOURCE/vesamenu.c32"
-printf 'synthetic-menu-config\n' > "$SOURCE/isolinux.cfg"
-printf 'synthetic-live-config-template\n' > "$SOURCE/live.cfg.in"
+printf 'template-isolinux-config\\n' > "$TEMPLATES/isolinux.cfg"
+printf 'template-live-config\\n' > "$TEMPLATES/live.cfg.in"
+printf 'template-menu-config\\n' > "$TEMPLATES/menu.cfg"
+printf 'package-isolinux-binary\\n' > "$ISOLINUX_BIN"
+printf 'package-vesamenu-module\\n' > "$VESAMENU_C32"
 
-bash "$HELPER" "$CONFIG" "$SOURCE"
+bash "$HELPER" "$CONFIG" "$TEMPLATES" "$ISOLINUX_BIN" "$VESAMENU_C32"
 TARGET="$CONFIG/bootloaders/isolinux"
 
-for required in isolinux.bin vesamenu.c32 isolinux.cfg live.cfg.in; do
+for required in isolinux.bin vesamenu.c32 isolinux.cfg live.cfg.in menu.cfg; do
   [[ -s "$TARGET/$required" ]] || {
-    printf 'ERROR: Syslinux staging omitted %s\n' "$required" >&2
-    exit 1
-  }
-  cmp -s "$SOURCE/$required" "$TARGET/$required" || {
-    printf 'ERROR: Staged Syslinux file differs from source: %s\n' "$required" >&2
+    printf 'ERROR: Syslinux staging omitted %s\\n' "$required" >&2
     exit 1
   }
 done
 
-# A source lacking either binary boot asset must fail closed.
-BROKEN_SOURCE="$TMP_ROOT/broken-source"
-mkdir -p "$BROKEN_SOURCE"
-printf 'only-one-file\n' > "$BROKEN_SOURCE/isolinux.bin"
-if bash "$HELPER" "$TMP_ROOT/broken-config" "$BROKEN_SOURCE" >/dev/null 2>&1; then
-  printf 'ERROR: Syslinux staging accepted a missing vesamenu.c32.\n' >&2
+cmp -s "$ISOLINUX_BIN" "$TARGET/isolinux.bin" || {
+  printf 'ERROR: Staged ISOLINUX binary differs from package source.\\n' >&2
+  exit 1
+}
+cmp -s "$VESAMENU_C32" "$TARGET/vesamenu.c32" || {
+  printf 'ERROR: Staged VESAMENU module differs from package source.\\n' >&2
+  exit 1
+}
+cmp -s "$TEMPLATES/isolinux.cfg" "$TARGET/isolinux.cfg" || {
+  printf 'ERROR: ISOLINUX config template was not preserved.\\n' >&2
+  exit 1
+}
+
+# A source missing either package-provided binary must fail closed.
+BROKEN_CONFIG="$TMP_ROOT/broken-config"
+if bash "$HELPER" "$BROKEN_CONFIG" "$TEMPLATES" "$ISOLINUX_BIN" "$TMP_ROOT/missing-vesamenu.c32" >/dev/null 2>&1; then
+  printf 'ERROR: Syslinux staging accepted a missing VESAMENU module.\\n' >&2
   exit 1
 fi
 
-printf 'NEXORA Syslinux bootloader staging test passed.\n'
+printf 'NEXORA Syslinux bootloader staging test passed.\\n'
