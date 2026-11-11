@@ -7,8 +7,6 @@ on:
       - "build/build-iso.sh"
       - "build/test-live-build-compatibility.sh"
       - "build/configure-ubuntu-archives.sh"
-          grep -Fq "resolute-security" "$probe_dir/config/archives/nexora-security.list.chroot"
-          grep -Fq "resolute-security" "$probe_dir/config/archives/nexora-security.list.binary"
   workflow_dispatch:
 
 permissions:
