@@ -24,13 +24,13 @@ if [ -e "${_TARGET}/live.cfg.in" ]
 then
     mv binary/live/vmlinuz-* binary/live/vmlinuz
     mv binary/live/initrd.img-* binary/live/initrd.img
-    sed -e "s|@KERNEL@|/live/vmlinuz|g" \\
-        -e "s|@INITRD@|/live/initrd.img|g" \\
+    sed -e "s|@KERNEL@|/live/vmlinuz|g" \
+        -e "s|@INITRD@|/live/initrd.img|g" \
         "${_TARGET}/live.cfg.in" >> "${_TARGET}/live.cfg"
     mv binary/live/vmlinuz-*-${_FLAVOUR} binary/live/vmlinuz${_NUMBER}
     mv binary/live/initrd.img-*-${_FLAVOUR} binary/live/initrd${_NUMBER}.img
-    sed -i -e "s|@KERNEL@|/live/vmlinuz${_NUMBER}|g" \\
-           -e "s|@INITRD@|/live/initrd${_NUMBER}.img|g" \\
+    sed -i -e "s|@KERNEL@|/live/vmlinuz${_NUMBER}|g" \
+           -e "s|@INITRD@|/live/initrd${_NUMBER}.img|g" \
         "${_TARGET}/live.cfg"
 fi
 FIXTURE
