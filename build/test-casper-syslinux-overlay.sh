@@ -19,8 +19,12 @@ cat > "$SOURCE" <<'FIXTURE'
 set -e
 # Including common functions
 . /usr/lib/${LIVE_BUILD}/build.sh
+# Legacy renderer dependency and invocations from the Ubuntu live-build Syslinux stage.
+Check_package chroot /usr/bin/rsvg librsvg2-bin
+Chroot chroot "rsvg --format png --height 480 --width 640 splash.svg splash.png"
+rsvg --format png --height 480 --width 640 "${_TARGET}/splash.svg" "${_TARGET}/splash.png"
 # Configuring files
-if [ -e "${_TARGET}/live.cfg.in" ]
+if [ -e "${_TARGET}/live.cfg.in"
 then
     mv binary/live/vmlinuz-* binary/live/vmlinuz
     mv binary/live/initrd.img-* binary/live/initrd.img
@@ -51,6 +55,9 @@ grep -Fq 'binary/${_NEXORA_INITRAMFS_DIR}/vmlinuz-*' "$PATCHED"
 grep -Fq 'binary/${_NEXORA_INITRAMFS_DIR}/initrd.img-*' "$PATCHED"
 grep -Fq '/${_NEXORA_INITRAMFS_DIR}/vmlinuz' "$PATCHED"
 grep -Fq '/${_NEXORA_INITRAMFS_DIR}/initrd.img' "$PATCHED"
+grep -Fq '/usr/bin/rsvg-convert' "$PATCHED"
+grep -Fq 'rsvg-convert --format png --height 480 --width 640' "$PATCHED"
+! grep -Eq '(^|[^[:alnum:]_-])rsvg([^[:alnum:]_-]|$)' "$PATCHED"
 [[ -L "$OVERLAY/bootloaders" ]]
 [[ "$(readlink "$OVERLAY/bootloaders")" == "$BOOTLOADERS" ]]
 
@@ -59,5 +66,7 @@ grep -Fq '/${_NEXORA_INITRAMFS_DIR}/initrd.img' "$PATCHED"
 grep -Fq 'binary/live/vmlinuz-*' "$SOURCE"
 grep -Fq '/live/vmlinuz' "$SOURCE"
 grep -Fq '/usr/lib/${LIVE_BUILD}/build.sh' "$SOURCE"
+grep -Fq '/usr/bin/rsvg' "$SOURCE"
+grep -Fq 'rsvg --format png --height 480 --width 640' "$SOURCE"
 
 printf 'NEXORA Casper/Syslinux compatibility overlay test passed; common-library bootstrap corrected and source package file preserved.\n'
