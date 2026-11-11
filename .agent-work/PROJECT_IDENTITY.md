@@ -15,8 +15,9 @@ Last verified: 2026-11-11 (repository, PR and Actions checkpoint rechecked)
 - Main baseline commit: `d8b2085122e094b514caf803921385d57ec435f7`
 - Active branch baseline commit: `366d0ab2330725a55682906c01303b53815c526d`
 - Active branch baseline tree fingerprint: `c21dd86adafee0a53dcd548688cb07ebeae762f6`
-- Current active PR branch HEAD at identity read-back: `4e2d4144cc2d9be89b8d5414d1d12e8dc9211994`.
-- Latest implementation commit with repository validation and live-build probe passing: `4e2d4144cc2d9be89b8d5414d1d12e8dc9211994` (run #231 and probe #29 passed; full ISO build #54 is in progress).
+- Latest verified active PR branch HEAD before this tracking update: `19a46bea5903d735b032f2c3dd4da5649a59df1a`.
+- Latest implementation commit with repository validation and live-build probe passing: `4e2d4144cc2d9be89b8d5414d1d12e8dc9211994` (run #231 and probe #29 passed; full ISO build #54 uses this implementation commit).
+- Commits after implementation commit `4e2d4144cc2d9be89b8d5414d1d12e8dc9211994` through branch head `19a46bea5903d735b032f2c3dd4da5649a59df1a` update execution records; no later product-code change is claimed.
 - Visibility: public
 - Archived: no
 - Verified repository permissions: read, write, maintain and admin
