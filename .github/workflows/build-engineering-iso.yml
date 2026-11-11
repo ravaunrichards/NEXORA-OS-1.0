@@ -8,6 +8,8 @@ on:
       - "build/configure-ubuntu-archives.sh"
       - "build/prepare-syslinux-bootloaders.sh"
       - "build/test-syslinux-bootloader-staging.sh"
+      - "build/prepare-casper-syslinux-overlay.sh"
+      - "build/test-casper-syslinux-overlay.sh"
       - "build/validate-config.sh"
       - "build/add-uefi-boot.sh"
       - "build/test-add-uefi-boot.sh"
