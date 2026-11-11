@@ -11,7 +11,7 @@ Use a native Ubuntu 26.04 LTS AMD64 machine. Cross-architecture builds are outsi
 Install the build tools:
 
     sudo apt-get update
-    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux
+    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux syslinux-common
 
 ## Build
 
@@ -62,7 +62,7 @@ Do not call the image reproducible or release-ready based on configuration alone
 
 ## ISOLINUX boot-asset staging
 
-Ubuntu's live-build package ships the `isolinux.bin` and `vesamenu.c32` files in `/usr/share/live/build/bootloaders/isolinux`. The ISO build stages that complete package-provided directory into `config/bootloaders/isolinux` before running `lb config`. This intentionally selects live-build's documented local bootloader override path, avoiding an incomplete pre-existing directory being preferred over the packaged source. The staging helper fails closed if either required binary is missing, and its regression test checks exact staged file content. The live-build CI probe also checks the installed package's real source directory.
+Ubuntu splits the BIOS boot assets across packages: `isolinux` provides `/usr/lib/ISOLINUX/isolinux.bin`, and `syslinux-common` provides `/usr/lib/syslinux/modules/bios/vesamenu.c32`. The live-build package supplies the menu and configuration templates under `/usr/share/live/build/bootloaders/isolinux`. The ISO build combines those package-owned files into `config/bootloaders/isolinux` before running `lb config`, selecting live-build's local bootloader override path. The staging helper fails closed if either binary or the template directory is missing. Its regression test verifies the exact binary content and preserves the menu templates; the live-build CI probe checks all three installed package locations.
 
 ## Ubuntu security pocket handling
 
