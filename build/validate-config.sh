@@ -61,6 +61,7 @@ required_files=(
   "$ROOT_DIR/installer/includes.chroot/usr/share/applications/nexora-installer.desktop"
   "$ROOT_DIR/build/README.md"
   "$ROOT_DIR/build/build-iso.sh"
+  "$ROOT_DIR/build/configure-ubuntu-archives.sh"
   "$ROOT_DIR/build/verify-iso.sh"
   "$ROOT_DIR/build/patch-debootstrap-download-retries.sh"
   "$ROOT_DIR/build/test-download-retry-wrapper.sh"
