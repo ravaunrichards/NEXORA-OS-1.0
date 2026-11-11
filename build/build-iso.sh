@@ -28,7 +28,7 @@ source /etc/os-release
 HOST_ARCH="$(dpkg --print-architecture)"
 [[ "$HOST_ARCH" == "amd64" ]] || fail "Build host must be amd64; detected: $HOST_ARCH."
 
-for command_name in lb debootstrap mksquashfs unsquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find grep sort wget; do
+for command_name in lb debootstrap mksquashfs unsquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find grep sort wget python3; do
   command -v "$command_name" >/dev/null 2>&1 || fail "Missing build tool: $command_name. Install the packages listed in build/README.md."
 done
 
@@ -75,6 +75,9 @@ DOWNLOAD_LOG="${NEXORA_DOWNLOAD_LOG:-${RUNNER_TEMP:-$WORK_DIR}/nexora-download-f
 mkdir -p "$(dirname -- "$DOWNLOAD_LOG")"
 : > "$DOWNLOAD_LOG"
 bash "$ROOT_DIR/build/patch-debootstrap-download-retries.sh" "$RETRY_BIN"
+LIVE_BUILD_OVERLAY="$WORK_DIR/live-build-overlay"
+bash "$ROOT_DIR/build/prepare-casper-syslinux-overlay.sh" "$LIVE_BUILD_OVERLAY"
+export LIVE_BUILD="$LIVE_BUILD_OVERLAY"
 
 # Preserve signed package metadata from the dated snapshot. The private
 # downloader permits only checksum-pinned, exact-relative-path package/index
