@@ -1,6 +1,6 @@
 # NEXORA OS — engineering decisions
 
-Last updated: 2026-11-10
+Last updated: 2026-11-11
 
 ## Confirmed constraints
 
@@ -31,3 +31,8 @@ Candidate remediation: retain Ubuntu Resolute suite, Ubuntu mirrors/snapshot, Ub
 ## Change control
 
 Any change to the Ubuntu target, initial architecture, shared-install/two-session requirement, installer data-loss safeguards, authentication/security baseline or release-qualification criteria requires an explicit decision entry and corresponding stage-queue update.
+
+
+## Verified build-tool compatibility finding (2026-11-11)
+
+Full ISO build #48 confirmed that generic live-build Debian mode's default security-suite construction generated Ubuntu's invalid resolute/updates suite. Ubuntu uses the separate resolute-security pocket, while the regular updates pocket is resolute-updates. The candidate disables only live-build's Debian-mode automatic security source with --security false, adds the signed resolute-security source from the exact dated Ubuntu snapshot during construction, and creates a security.ubuntu.com resolute-security source for the installed system. LB_UPDATES=true is exported in the build process because the installed live-build version accepts that variable but does not provide an --updates command-line option. The regular Ubuntu updates pocket remains enabled. The regression test and probe passed in run #29; a full ISO build remains required before accepting the change.
