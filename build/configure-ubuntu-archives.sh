@@ -6,6 +6,7 @@ fail() {
   exit 1
 }
 
+[[ "$#" -eq 2 ]] || fail "Usage: $0 CONFIG_DIR YYYYMMDDTHHMMSSZ"
 CONFIG_DIR="$1"
 SNAPSHOT="$2"
 
