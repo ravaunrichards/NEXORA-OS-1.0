@@ -90,6 +90,9 @@ exec /usr/sbin/debootstrap "$@"
 DEBOOTSTRAP_WRAPPER
 chmod 0755 "$RETRY_BIN/debootstrap"
 export NEXORA_DEBOOTSTRAP_DIR="$DEBOOTSTRAP_OVERLAY"
+# debootstrap reads this variable directly, even if live-build invokes its
+# absolute /usr/sbin/debootstrap path instead of the private PATH wrapper.
+export DEBOOTSTRAP_DIR="$DEBOOTSTRAP_OVERLAY"
 export NEXORA_RETRY_WGET="$RETRY_BIN/wget"
 
 LIVE_BUILD_OVERLAY="$WORK_DIR/live-build-overlay"
