@@ -109,6 +109,7 @@ bash "$ROOT_DIR/build/configure-ubuntu-archives.sh" config "$SNAPSHOT"
 # Ubuntu Resolute's packaged live-build Ubuntu mode requests removed legacy
 # Oneiric Syslinux/gfxboot packages. Use generic integration while explicitly
 # pinning Ubuntu suites, trust roots, archive areas, mirrors and Casper.
+export LB_UPDATES=true
 lb config \
   --mode debian \
   --distribution resolute \
@@ -136,7 +137,6 @@ lb config \
   --apt-recommends true \
   --apt-secure true \
   --security false \
-  --updates true \
   --firmware-binary true \
   --firmware-chroot false \
   --debian-installer false \
