@@ -28,7 +28,7 @@ source /etc/os-release
 HOST_ARCH="$(dpkg --print-architecture)"
 [[ "$HOST_ARCH" == "amd64" ]] || fail "Build host must be amd64; detected: $HOST_ARCH."
 
-for command_name in lb debootstrap mksquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find wget; do
+for command_name in lb debootstrap mksquashfs unsquashfs xorriso grub-mkrescue grub-mkstandalone mkfs.vfat mmd mcopy sha256sum df awk find grep sort wget python3; do
   command -v "$command_name" >/dev/null 2>&1 || fail "Missing build tool: $command_name. Install the packages listed in build/README.md."
 done
 
@@ -75,53 +75,74 @@ DOWNLOAD_LOG="${NEXORA_DOWNLOAD_LOG:-${RUNNER_TEMP:-$WORK_DIR}/nexora-download-f
 mkdir -p "$(dirname -- "$DOWNLOAD_LOG")"
 : > "$DOWNLOAD_LOG"
 bash "$ROOT_DIR/build/patch-debootstrap-download-retries.sh" "$RETRY_BIN"
+LIVE_BUILD_OVERLAY="$WORK_DIR/live-build-overlay"
+bash "$ROOT_DIR/build/prepare-casper-syslinux-overlay.sh" "$LIVE_BUILD_OVERLAY"
+export LIVE_BUILD="$LIVE_BUILD_OVERLAY"
 
-# Preserve signed package metadata from the dated snapshot while allowing
-# debootstrap to fetch only checksum-pinned, version-specific .deb objects
-# from Ubuntu's archive if the snapshot's package endpoint is unavailable.
+# Preserve signed package metadata from the dated snapshot. The private
+# downloader permits only checksum-pinned, exact-relative-path package/index
+# transport fallback; debootstrap validates downloaded content before use.
 export NEXORA_SNAPSHOT_MIRROR="$SNAPSHOT_MIRROR"
 export NEXORA_ARCHIVE_MIRROR="$ARCHIVE_MIRROR"
 export NEXORA_DOWNLOAD_LOG="$DOWNLOAD_LOG"
 export PATH="$RETRY_BIN:$PATH"
 printf 'Pinned metadata mirror: %s\n' "$NEXORA_SNAPSHOT_MIRROR"
-printf 'Exact-path package object fallback: %s\n' "$NEXORA_ARCHIVE_MIRROR"
+printf 'Exact-path package/index transport fallback: %s\n' "$NEXORA_ARCHIVE_MIRROR"
 printf 'Private downloader: %s\n' "$(command -v wget)"
 
 cd "$WORK_DIR"
-mkdir -p config/package-lists config/includes.chroot
+mkdir -p config/package-lists config/includes.chroot config/archives
 cp "$ROOT_DIR/build/packages/nexora-base.list.chroot" config/package-lists/nexora-base.list.chroot
 cp -a "$ROOT_DIR/installer/includes.chroot/." config/includes.chroot/
+bash "$ROOT_DIR/build/prepare-syslinux-bootloaders.sh" config
+bash "$ROOT_DIR/build/configure-ubuntu-archives.sh" config "$SNAPSHOT"
 
 {
   printf 'NEXORA OS engineering ISO build\n'
   printf 'Release: Ubuntu 26.04 (resolute)\n'
   printf 'Architecture: amd64\n'
   printf 'Ubuntu snapshot metadata: %s\n' "$SNAPSHOT"
-  printf 'Package object fallback: %s (same versioned pool path; debootstrap validates package checksum and size)\n' "$ARCHIVE_MIRROR"
+  printf 'Package/index transport fallback: %s (exact relative path; debootstrap validates pinned checksum and size)\n' "$ARCHIVE_MIRROR"
+  printf 'Live-build integration: generic tooling with Ubuntu Resolute suite and Casper explicitly pinned\n'
+  printf 'Ubuntu security pocket: resolute-security (signed snapshot metadata)\n'
+  printf 'Ubuntu bootstrap keyring: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n'
   printf 'Repository commit: %s\n' "$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf unknown)"
   printf 'Started UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$WORK_DIR/build-inputs.txt"
 
-# Send live-system diagnostics to the QEMU serial console while retaining VGA output.
+# Ubuntu Resolute's packaged live-build Ubuntu mode requests removed legacy
+# Oneiric Syslinux/gfxboot packages. Use generic integration while explicitly
+# pinning Ubuntu suites, trust roots, archive areas, mirrors and Casper.
+
+# live-build reads updates-pocket enablement from the LB_UPDATES environment variable.
+export LB_UPDATES=true
 lb config \
-  --mode ubuntu \
+  --mode debian \
   --distribution resolute \
+  --parent-distribution resolute \
   --architectures amd64 \
   --binary-images iso-hybrid \
   --bootloader syslinux \
+  --syslinux-theme live-build \
+  --bootstrap-keyring /usr/share/keyrings/ubuntu-archive-keyring.gpg \
+  --keyring-packages ubuntu-keyring \
+  --initramfs casper \
+  --initsystem systemd \
   --memtest none \
-  --bootappend-live "console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console" \
+  --bootappend-live "boot=casper console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console" \
   --system live \
   --archive-areas "main restricted universe multiverse" \
+  --parent-archive-areas "main restricted universe multiverse" \
   --mirror-bootstrap "$SNAPSHOT_MIRROR" \
+  --parent-mirror-bootstrap "$SNAPSHOT_MIRROR" \
   --mirror-chroot "$SNAPSHOT_MIRROR" \
-  --mirror-chroot-security "$SNAPSHOT_MIRROR" \
+  --parent-mirror-chroot "$SNAPSHOT_MIRROR" \
   --mirror-binary "https://archive.ubuntu.com/ubuntu" \
-  --mirror-binary-security "https://security.ubuntu.com/ubuntu" \
+  --parent-mirror-binary "https://archive.ubuntu.com/ubuntu" \
   --checksums sha256 \
   --apt-recommends true \
   --apt-secure true \
-  --security true \
+  --security false \
   --firmware-binary true \
   --firmware-chroot false \
   --debian-installer false \
@@ -130,8 +151,21 @@ lb config \
   --iso-publisher "NEXORA OS Project" \
   --iso-volume "NEXORA_2604" 2>&1 | tee "$WORK_DIR/config.log"
 
-printf 'Starting live-build. Ubuntu mode is an experimental derivative path; any build failure must be investigated rather than bypassed.\n'
+printf 'Starting live-build with Ubuntu Resolute archive metadata and Casper.\n'
 lb build 2>&1 | tee "$WORK_DIR/build.log"
+
+# Refuse an image whose actual installed root filesystem is not Ubuntu 26.04
+# Resolute. This check runs before the image is copied to the output folder.
+mapfile -t ROOTFS_CANDIDATES < <(find "$WORK_DIR/binary" -type f -name filesystem.squashfs -print | sort)
+(( ${#ROOTFS_CANDIDATES[@]} == 1 )) || fail "Expected exactly one filesystem.squashfs; found ${#ROOTFS_CANDIDATES[@]}. Workspace retained at $WORK_DIR."
+ROOTFS_IMAGE="${ROOTFS_CANDIDATES[0]}"
+ROOTFS_OS_RELEASE="$WORK_DIR/rootfs-os-release.txt"
+unsquashfs -cat "$ROOTFS_IMAGE" usr/lib/os-release > "$ROOTFS_OS_RELEASE" || fail "Could not read target /usr/lib/os-release."
+grep -Eq '^ID="?ubuntu"?$' "$ROOTFS_OS_RELEASE" || fail "Refusing non-Ubuntu root filesystem."
+grep -Eq '^VERSION_ID="?26\.04"?$' "$ROOTFS_OS_RELEASE" || fail "Refusing root filesystem outside Ubuntu 26.04."
+grep -Eq '^VERSION_CODENAME="?resolute"?$' "$ROOTFS_OS_RELEASE" || fail "Refusing root filesystem outside Ubuntu Resolute."
+printf 'Verified target root filesystem: Ubuntu 26.04 (resolute).\n'
+printf 'Verified target OS: Ubuntu 26.04 (resolute)\n' >> "$WORK_DIR/build-inputs.txt"
 
 mapfile -t ISO_CANDIDATES < <(find "$WORK_DIR" -type f -name '*.iso' -print | sort)
 (( ${#ISO_CANDIDATES[@]} == 1 )) || fail "Expected exactly one generated ISO; found ${#ISO_CANDIDATES[@]}. Workspace retained at $WORK_DIR."

@@ -1,86 +1,137 @@
-name: Verify NEXORA BIOS and UEFI bootloader configuration
+name: Verify NEXORA Ubuntu-targeted live-build configuration
 
 on:
   push:
     paths:
       - ".github/workflows/bootloader-option-probe.yml"
+      - "build/build-iso.sh"
+      - "build/test-live-build-compatibility.sh"
+      - "build/configure-ubuntu-archives.sh"
+      - "build/prepare-syslinux-bootloaders.sh"
+      - "build/prepare-casper-syslinux-overlay.sh"
+      - "build/test-casper-syslinux-overlay.sh"
+      - "build/test-syslinux-bootloader-staging.sh"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  inspect:
+  probe:
     runs-on: ubuntu-26.04
-    timeout-minutes: 10
+    timeout-minutes: 15
+    env:
+      NEXORA_SNAPSHOT: "20261109T000000Z"
     steps:
-      - name: Install Ubuntu Resolute live-build
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y live-build=3.0~a57-1ubuntu54
-          lb --version
-          lb config --help | grep -E -- '--bootloaders?|--binary-images' || true
+      - name: Check out NEXORA source
+        uses: actions/checkout@v4
 
-      - name: Test both bootloader option forms in isolated directories
+      - name: Install live-build and Ubuntu trust roots
         shell: bash
         run: |
           set -Eeuo pipefail
-          mkdir -p "$RUNNER_TEMP/nexora-lb-probe/singular" "$RUNNER_TEMP/nexora-lb-probe/plural"
+          sudo apt-get update
+          sudo apt-get install -y live-build ubuntu-keyring isolinux syslinux-common binutils librsvg2-bin
+          test -s /usr/share/keyrings/ubuntu-archive-keyring.gpg
+          test -s /usr/lib/ISOLINUX/isolinux.bin
+          test -s /usr/lib/syslinux/modules/bios/vesamenu.c32
+          test -s /usr/lib/syslinux/modules/bios/ldlinux.c32
+          test -s /usr/lib/syslinux/modules/bios/libcom32.c32
+          test -s /usr/lib/syslinux/modules/bios/libutil.c32
+          readelf -d /usr/lib/syslinux/modules/bios/vesamenu.c32 > "$RUNNER_TEMP/vesamenu-dependencies.txt"
+          grep -Fq "[libutil.c32]" "$RUNNER_TEMP/vesamenu-dependencies.txt"
+          grep -Fq "[libcom32.c32]" "$RUNNER_TEMP/vesamenu-dependencies.txt"
+          lb --version
+          grep -nE 'rsvg|splash\.svg' /usr/lib/live/build/lb_binary_syslinux
+          command -v rsvg-convert
+          rsvg-convert --version
+          printf '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#345678"/></svg>\n' > "$RUNNER_TEMP/nexora-rsvg-test.svg"
+          rsvg-convert --format png --height 8 --width 8 "$RUNNER_TEMP/nexora-rsvg-test.svg" -o "$RUNNER_TEMP/nexora-rsvg-test.png"
+          test -s "$RUNNER_TEMP/nexora-rsvg-test.png"
 
-          cd "$RUNNER_TEMP/nexora-lb-probe/singular"
-          live_args="console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console"
-          if lb config --mode ubuntu --distribution resolute --architectures amd64 \
-            --binary-images iso-hybrid --bootloader syslinux \
+      - name: Validate Ubuntu Resolute suite, keyring, Casper and generic boot theme
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          probe_dir="$RUNNER_TEMP/nexora-lb-probe"
+          mkdir -p "$probe_dir"
+          cd "$probe_dir"
+          bash "$GITHUB_WORKSPACE/build/prepare-syslinux-bootloaders.sh" "$probe_dir/config"
+          test -s "$probe_dir/config/bootloaders/isolinux/isolinux.bin"
+          bash "$GITHUB_WORKSPACE/build/prepare-casper-syslinux-overlay.sh" "$probe_dir/live-build-overlay"
+          export LIVE_BUILD="$probe_dir/live-build-overlay"
+          test -x "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq 'binary/${_NEXORA_INITRAMFS_DIR}/vmlinuz-*' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq '/${_NEXORA_INITRAMFS_DIR}/vmlinuz' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq '/usr/bin/rsvg-convert' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq 'Chroot chroot "rsvg-convert --format png --height 480 --width 640 splash.svg -o splash.png"' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          grep -Fq 'rsvg-convert --format png --height 480 --width 640 "${_TARGET}/splash.svg" -o "${_TARGET}/splash.png"' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          ! grep -Eq '(^|[^[:alnum:]_-])rsvg([^[:alnum:]_-]|$)' "$LIVE_BUILD/scripts/build/lb_binary_syslinux"
+          cat > "$LIVE_BUILD/scripts/build/lb_nexora_overlay_probe" <<'PROBE'
+          #!/usr/bin/env bash
+          printf 'private-live-build-overlay-selected\n'
+          PROBE
+          chmod 0755 "$LIVE_BUILD/scripts/build/lb_nexora_overlay_probe"
+          lb_output="$(lb nexora_overlay_probe)"
+          grep -Fq 'private-live-build-overlay-selected' <<< "$lb_output"
+          test -s "$probe_dir/config/bootloaders/isolinux/vesamenu.c32"
+          test -s "$probe_dir/config/bootloaders/isolinux/ldlinux.c32"
+          test -s "$probe_dir/config/bootloaders/isolinux/libcom32.c32"
+          test -s "$probe_dir/config/bootloaders/isolinux/libutil.c32"
+          live_args="boot=casper console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console"
+          export LB_UPDATES=true
+
+          lb config \
+            --mode debian \
+            --distribution resolute \
+            --parent-distribution resolute \
+            --architectures amd64 \
+            --binary-images iso-hybrid \
+            --bootloader syslinux \
+            --syslinux-theme live-build \
+            --bootstrap-keyring /usr/share/keyrings/ubuntu-archive-keyring.gpg \
+            --keyring-packages ubuntu-keyring \
+            --initramfs casper \
+            --initsystem systemd \
+            --memtest none \
+            --security false \
             --bootappend-live "$live_args" \
-            --archive-areas "main restricted universe multiverse"; then
-            echo "SINGULAR_OPTION=accepted"
-            grep -R -nE 'BOOTLOADER|bootloader|BOOTAPPEND_LIVE|bootappend-live' config || true
-            if grep -R -F -- "$live_args" config >/dev/null; then
-              echo "LIVE_SERIAL_BOOT_ARGS=accepted"
-            else
-              echo "::error::live-build did not persist the requested serial-console kernel arguments."
-              exit 1
-            fi
-          else
-            echo "::error::live-build rejected the singular bootloader or live boot-append options."
-            exit 1
-          fi
+            --archive-areas "main restricted universe multiverse" \
+            --parent-archive-areas "main restricted universe multiverse"
 
-          cd "$RUNNER_TEMP/nexora-lb-probe/plural"
-          if lb config --mode ubuntu --distribution resolute --architectures amd64 \
-            --binary-images iso-hybrid --bootloaders "syslinux grub-efi" \
-            --archive-areas "main restricted universe multiverse"; then
-            echo "PLURAL_OPTION=accepted"
-            grep -R -nE 'BOOTLOADER|bootloader' config || true
-          else
-            echo "PLURAL_OPTION=rejected"
-          fi
+          dump="$probe_dir/config-dump.txt"
+          lb config --dump > "$dump"
+          grep -Eq '(^|: )LB_MODE="debian"$' "$dump"
+          grep -Eq '(^|: )LB_DISTRIBUTION="resolute"$' "$dump"
+          grep -Eq '(^|: )LB_PARENT_DISTRIBUTION="resolute"$' "$dump"
+          grep -Eq '(^|: )LB_INITRAMFS="casper"$' "$dump"
+          grep -Eq '(^|: )LB_SYSLINUX_THEME="live-build"$' "$dump"
+          grep -Eq '(^|: )LB_SECURITY="false"$' "$dump"
+          grep -Fq '/usr/share/keyrings/ubuntu-archive-keyring.gpg' "$dump"
+          grep -Fq 'ubuntu-keyring' "$dump"
+          grep -Fq 'boot=casper' "$dump"
+          bash "$GITHUB_WORKSPACE/build/test-live-build-compatibility.sh"
 
-          echo "### Installed live-build bootloader scripts"
-          dpkg -L live-build | grep -E 'lb_binary_(syslinux|grub)|bootloader' || true
-          echo "### EFI references in live-build templates/scripts"
-          grep -R -nEi 'efi|syslinux\\.efi|efi\\.img|efiboot' \
-            /usr/lib/live/build/lb_binary_syslinux \
-            /usr/share/live/build/bootloaders 2>/dev/null | head -160 || true
-          echo "### Relevant package candidates"
-          apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
+          bash "$GITHUB_WORKSPACE/build/configure-ubuntu-archives.sh" "$probe_dir/config" "$NEXORA_SNAPSHOT"
+          grep -Fq "resolute-security" "$probe_dir/config/archives/nexora-security.list.chroot"
+          grep -Fq "resolute-security" "$probe_dir/config/archives/nexora-security.list.binary"
 
           {
-            echo "## NEXORA bootloader configuration probe"
-            echo "Ubuntu runner: $(. /etc/os-release && printf '%s' "$PRETTY_NAME")"
+            echo "## NEXORA Ubuntu-targeted live-build configuration"
             echo
-            echo "### Singular option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/singular/config" || true
+            lb --version
             echo
-            echo "### Plural option result"
-            grep -R -nE 'BOOTLOADER|bootloader' "$RUNNER_TEMP/nexora-lb-probe/plural/config" || true
+            cat "$dump"
+            echo
+            echo "### Available EFI-related package candidates"
+            apt-cache policy syslinux-efi grub-efi-amd64-bin grub-efi-amd64-signed || true
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload generated live-build configs
+      - name: Upload generated configuration
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: NEXORA-live-build-bootloader-probe
-          path: ${{ runner.temp }}/nexora-lb-probe/
+          name: NEXORA-ubuntu-live-build-config
+          path: "${{ runner.temp }}/nexora-lb-probe/"
           if-no-files-found: warn
           retention-days: 14

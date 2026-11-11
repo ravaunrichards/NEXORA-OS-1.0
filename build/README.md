@@ -2,7 +2,7 @@
 
 This creates a **development-only live ISO** with the NEXORA Calamares installer configuration and application-menu launcher. The installer is experimental and is not approved for real-disk installation until the disposable-disk acceptance tests pass. This is not a production release.
 
-The build creates a BIOS live image with live-build, then adds a separate x86_64 GRUB EFI El Torito image. The final ISO must expose both BIOS and UEFI entries. BIOS live boot parameters direct kernel and systemd diagnostics to both the serial console and VGA so headless QEMU tests can verify that userspace was reached. The serial-argument option was confirmed against the Ubuntu Resolute live-build package. This is standard UEFI boot support only; Secure Boot signing and validation remain separate release gates.
+The build creates a BIOS live image with live-build, then adds a separate x86_64 GRUB EFI El Torito image. The final ISO must expose both BIOS and UEFI entries. BIOS live boot parameters direct kernel and systemd diagnostics to both the serial console and VGA so headless QEMU tests can verify that userspace was reached. Because Ubuntu Resolute's packaged live-build Ubuntu mode requests removed Oneiric Syslinux and gfxboot packages, the builder uses live-build's generic integration mode while explicitly setting both distribution identifiers to `resolute`, using the Ubuntu archive keyring and package trust roots, pinning Ubuntu archive components/mirrors, and selecting Casper. It inspects the generated squashfs `/usr/lib/os-release` and rejects the image unless it identifies as Ubuntu 26.04 (Resolute). This is a build-tool compatibility choice, not a change from Ubuntu as the OS target. This is standard UEFI boot support only; Secure Boot signing and validation remain separate release gates.
 
 ## Supported build host
 
@@ -11,7 +11,7 @@ Use a native Ubuntu 26.04 LTS AMD64 machine. Cross-architecture builds are outsi
 Install the build tools:
 
     sudo apt-get update
-    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux
+    sudo apt-get install -y live-build debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin dosfstools mtools isolinux syslinux-common
 
 ## Build
 
@@ -21,7 +21,7 @@ Choose and record a UTC Ubuntu archive snapshot ID. Example:
 
 The builder rejects a missing or malformed snapshot ID, the wrong host release or architecture, missing dependencies, insufficient resources, and pre-existing output names. It uses a new temporary work directory and does not overwrite prior ISO files.
 
-For network resilience, the build creates a private `wget` wrapper inside its temporary workspace. Signed Release and Packages metadata remains on the selected Ubuntu snapshot. If a version-specific `pool/*.deb` object cannot be fetched promptly from that snapshot, the wrapper retrieves the exact same package path from `archive.ubuntu.com`; it does not change package names or versions. The Ubuntu debootstrap downloader checks the downloaded package's size and checksum against the pinned Packages index before accepting it. Other download failures receive up to four attempts. The system `wget` executable and installed `debootstrap` files are not modified. The fallback decisions are recorded in `nexora-download-fallback.log` alongside the build log.
+For network resilience, the build creates a private `wget` wrapper inside its temporary workspace. Signed Release and Packages metadata remains on the selected Ubuntu snapshot. If a version-specific `pool/*.deb` object cannot be fetched promptly from that snapshot, the wrapper retrieves the exact same package path from `archive.ubuntu.com`; it does not change package names or versions. The Ubuntu debootstrap downloader checks the downloaded package's size and checksum against the pinned Packages index before accepting it. Other download failures receive up to four attempts. The system `wget` executable and installed `debootstrap` files are not modified. The fallback decisions are recorded in `nexora-download-fallback.log` alongside the build log. If a snapshot `Packages` index object (`Packages`, `.gz`, `.xz`, or `.bz2`) is unavailable, the private wrapper may try the identical relative index path on `archive.ubuntu.com`. The signed snapshot `InRelease`/Release files are never redirected. Debootstrap validates any downloaded index against the checksum and size recorded in the signed snapshot Release file, so a live-archive index that differs from the selected snapshot is rejected.
 
 To select another output directory:
 
@@ -30,7 +30,7 @@ To select another output directory:
 Build workspaces are retained for diagnosis and can be removed manually after reviewing the logs.
 
 
-Ubuntu 26.04 splits the former monolithic Linux firmware set into supported packages behind the explicit `linux-firmware` metapackage, including `linux-firmware-nvidia-graphics`. The build also passes `--memtest none` to skip live-build's legacy memtest boot-menu helper, which still expects the removed `memtest86+.bin` filename while Ubuntu's `memtest86+` 8.x package ships renamed binaries. This only omits the optional boot-menu memory tester; it does not remove the OS kernel or change installed-system memory diagnostics. The regression test `build/test-live-build-compatibility.sh` protects this setting. The build therefore uses `--firmware-chroot false` to prevent live-build's legacy automatic firmware-name selection from requesting the deleted `nouveau-firmware` package. This does **not** remove the explicitly listed `linux-firmware` package or its supported dependencies. The regression check `build/test-firmware-selection.sh` protects this configuration.
+Ubuntu 26.04 splits the former monolithic Linux firmware set into supported packages behind the explicit `linux-firmware` metapackage, including `linux-firmware-nvidia-graphics`. The generic Syslinux theme path avoids the removed `syslinux-themes-ubuntu-oneiric` and `gfxboot-theme-ubuntu` dependencies in live-build's Ubuntu-specific helper. Regression checks in `build/test-live-build-compatibility.sh` and `.github/workflows/bootloader-option-probe.yml` protect the explicit Ubuntu suite/keyring/Casper settings and generated live-build configuration. The build also passes `--memtest none` to skip live-build's legacy memtest boot-menu helper, which still expects the removed `memtest86+.bin` filename while Ubuntu's `memtest86+` 8.x package ships renamed binaries. This only omits the optional boot-menu memory tester; it does not remove the OS kernel or change installed-system memory diagnostics. The regression test `build/test-live-build-compatibility.sh` protects this setting. The build therefore uses `--firmware-chroot false` to prevent live-build's legacy automatic firmware-name selection from requesting the deleted `nouveau-firmware` package. This does **not** remove the explicitly listed `linux-firmware` package or its supported dependencies. The regression check `build/test-firmware-selection.sh` protects this configuration.
 
 ## Verify
 
@@ -59,3 +59,15 @@ For every candidate, retain:
 - later, installer and physical-hardware test records.
 
 Do not call the image reproducible or release-ready based on configuration alone. A successful clean build and repeat-build comparison are still outstanding.
+
+## ISOLINUX boot-asset staging
+
+Ubuntu splits the BIOS boot assets across packages: `isolinux` provides `/usr/lib/ISOLINUX/isolinux.bin`, and `syslinux-common` provides `/usr/lib/syslinux/modules/bios/vesamenu.c32`. The live-build package supplies the menu and configuration templates under `/usr/share/live/build/bootloaders/isolinux`. The ISO build combines those package-owned files into `config/bootloaders/isolinux` before running `lb config`, selecting live-build's local bootloader override path. The full BIOS module set includes `ldlinux.c32`, `libcom32.c32`, `libutil.c32` and `vesamenu.c32`; `vesamenu.c32` declares `libutil.c32` and `libcom32.c32` as ELF shared-module dependencies, and ISOLINUX requires `ldlinux.c32`. The staging helper fails closed if either binary or the template directory is missing. Its regression test verifies the exact binary content and preserves the menu templates; the live-build CI probe checks all three installed package locations.
+
+## Casper kernel path compatibility
+
+Ubuntu Resolute's live-build package currently stages the Casper kernel and initrd under `binary/casper`, while its packaged Syslinux stage still assumes `binary/live`. The builder creates a private live-build overlay inside its temporary workspace and overrides only `lb_binary_syslinux` so kernel discovery, moves and generated menu paths follow the configured `LB_INITRAMFS` directory. The original packaged script and system live-build installation are not modified. The overlay retains the package-provided bootloader templates through a read-only symlink. It also maps live-build's legacy `rsvg` command and `/usr/bin/rsvg` dependency check to Ubuntu Resolute's `rsvg-convert` executable from `librsvg2-bin`, leaving the installed package untouched. The overlay generator rejects unexpected upstream script layouts and the repository validation plus Ubuntu CI probe test the transformed kernel/renderer paths and live-build dispatch selection; the probe also performs a real SVG-to-PNG conversion.
+
+## Ubuntu security pocket handling
+
+Live-build's generic Debian mode constructs Debian-style security pocket names such as `resolute/updates`, which Ubuntu does not publish. The builder therefore disables only live-build's automatic Debian-style security-source generation and adds Ubuntu's actual `resolute-security` pocket explicitly through `build/configure-ubuntu-archives.sh`. During image construction, this source uses the selected dated Ubuntu snapshot and the Ubuntu archive keyring, preserving signed snapshot package metadata. The generated runtime APT source uses `https://security.ubuntu.com/ubuntu/` with the `resolute-security` pocket so installed systems can receive security updates. The ordinary `resolute-updates` pocket remains enabled from the pinned snapshot during construction. Regression coverage validates both source definitions and rejects the invalid `resolute/updates` suite.
