@@ -1,10 +1,10 @@
 # NEXORA OS — blockers and external dependencies
 
-Last updated: 2026-11-10
+Last updated: 2026-11-10 (after validation run #170)
 
 | ID | Status | Area | Blocker / evidence | Required action | Owner |
 |---|---|---|---|---|---|
-| B01 | OPEN | S01 build foundation | Full ISO build #45 on PR #5 fails in `lb_binary_syslinux`: `syslinux-themes-ubuntu-oneiric` cannot be located and `gfxboot-theme-ubuntu` has no installation candidate. | Prove a safe live-build configuration that retains Ubuntu Resolute and Casper, then build the complete image and test it. | Engineering |
+| B01 | OPEN | S01 build foundation | Historical full ISO build #45 failed in `lb_binary_syslinux` because obsolete Oneiric theme/gfxboot packages are unavailable. Current candidate uses generic live-build mode with explicit Ubuntu Resolute suite, Ubuntu keyring, Casper and a post-build Ubuntu 26.04 identity guard; full build has not yet proven it. | Run the current live-build probe and full ISO build; fix the next observed failure without changing the Ubuntu target. | Engineering |
 | B02 | ACTIVE | Execution environment | No local checkout is mounted; `git clone` could not resolve github.com. Local Git status and local build/test commands are unavailable in this session. | Continue only through verified GitHub branch/tree/commit operations and GitHub Actions; use local execution only when a checkout is actually available. | Environment |
 | B03 | OPEN | S12 governance | The `main` branch is currently unprotected, as recorded in repository governance documentation. | Repository owner enables PR/validation protection, prevents force-push/deletion, then verifies branch settings. | Repository owner |
 | B04 | OPEN | S12 legal | No project license has been selected or committed. Public repository visibility does not grant redistribution rights. | Owner selects and approves an appropriate license; add the exact license and document third-party notices. | Project owner |
@@ -16,7 +16,8 @@ Last updated: 2026-11-10
 
 ## Resolved or progressed issues
 
-- The snapshot package-index download problem discovered on main build #42 has an active correction in PR #5. PR validation #159 passes; PR build #45 advances into the live-build binary stage before exposing B01. This is progress, not a completed ISO build and not a merged fix.
+- The snapshot package-index download problem discovered on main build #42 has an active correction in PR #5. Validation #159 passed; latest validation #170 also passes after syntax/YAML/regression-test repairs. This is progress, not a completed ISO build and not a merged fix.
+- The malformed rootfs-verification shell block, malformed probe-workflow YAML artifact path, and fragile live-build option test were corrected on the PR branch. Run #170 passed all repository validation checks. These defects are resolved at the tested commit; the ISO build gate remains open.
 - Earlier obsolete firmware auto-injection and removed memtest filename issues have targeted regression checks; later full-build evidence must still confirm downstream stages.
 
 ## Blocker policy
