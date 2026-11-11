@@ -42,11 +42,16 @@ source = path.read_text(encoding="utf-8")
 # Rewrite only standalone command/path tokens in the private stage copy.
 legacy_rsvg = re.compile(r"(?<![A-Za-z0-9_-])rsvg(?![A-Za-z0-9_-])")
 legacy_rsvg_count = len(legacy_rsvg.findall(source))
-if legacy_rsvg_count < 2:
-    raise SystemExit(
-        "Unsupported live-build Syslinux theme layout: expected legacy rsvg check and invocation."
-    )
-source = legacy_rsvg.sub("rsvg-convert", source)
+if legacy_rsvg_count >= 2:
+    source = legacy_rsvg.sub("rsvg-convert", source)
+else:
+    # Newer live-build revisions already use rsvg-convert. Accept that layout
+    # unchanged, but fail closed if neither complete interface is present.
+    modern_rsvg_count = len(re.findall(r"(?<![A-Za-z0-9_-])rsvg-convert(?![A-Za-z0-9_-])", source))
+    if modern_rsvg_count < 2:
+        raise SystemExit(
+            "Unsupported live-build Syslinux theme layout: expected an SVG renderer dependency check and invocation."
+        )
 
 # The Resolute package's stage runner can invoke the copied script with its
 # helper-library selector empty, yielding the invalid /usr/lib//build.sh.
