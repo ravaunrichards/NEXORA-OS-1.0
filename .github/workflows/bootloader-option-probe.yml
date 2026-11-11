@@ -54,7 +54,7 @@ jobs:
             --archive-areas "main restricted universe multiverse" \
             --parent-archive-areas "main restricted universe multiverse"
 
-          dump="$probe_dir/config"
+          dump="$probe_dir/config-dump.txt"
           lb config --dump > "$dump"
           grep -Eq '^LB_MODE="?debian"?$' "$dump"
           grep -Eq '^LB_DISTRIBUTION="?resolute"?$' "$dump"
