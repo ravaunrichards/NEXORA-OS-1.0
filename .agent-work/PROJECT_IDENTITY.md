@@ -1,6 +1,6 @@
 # NEXORA OS — verified project identity
 
-Last verified: 2026-11-10 (latest repository check)
+Last verified: 2026-11-11 (repository and PR head rechecked)
 
 ## Repository identity
 
@@ -15,7 +15,8 @@ Last verified: 2026-11-10 (latest repository check)
 - Main baseline commit: `d8b2085122e094b514caf803921385d57ec435f7`
 - Active branch baseline commit: `366d0ab2330725a55682906c01303b53815c526d`
 - Active branch baseline tree fingerprint: `c21dd86adafee0a53dcd548688cb07ebeae762f6`
-- Latest implementation commit validated by GitHub Actions run #170: `b70a27e5fa9c2f37a4ec3fec1c63e2838ded4604` (subsequent commits in this branch update execution records only).
+- Current active PR branch HEAD at identity read-back: `88a08307ba6f8c0218b55b9dcd1fe31ae93200dd`.
+- Latest implementation commit with full repository validation: `d34a114f0cb1334a77025bc7a23d88ee90b41a24` (run #176 was running at last check; #174 passed on the preceding workflow-only fix).
 - Visibility: public
 - Archived: no
 - Verified repository permissions: read, write, maintain and admin
