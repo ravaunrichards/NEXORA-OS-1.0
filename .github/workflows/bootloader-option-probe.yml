@@ -39,6 +39,7 @@ jobs:
           mkdir -p "$probe_dir"
           cd "$probe_dir"
           live_args="boot=casper console=ttyS0,115200n8 console=tty0 systemd.show_status=1 systemd.log_target=console"
+          export LB_UPDATES=true
 
           lb config \
             --mode debian \
@@ -54,7 +55,6 @@ jobs:
             --initsystem systemd \
             --memtest none \
             --security false \
-            --updates true \
             --bootappend-live "$live_args" \
             --archive-areas "main restricted universe multiverse" \
             --parent-archive-areas "main restricted universe multiverse"
